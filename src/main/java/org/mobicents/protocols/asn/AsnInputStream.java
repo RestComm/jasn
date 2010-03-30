@@ -5,16 +5,60 @@ import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
 
 /**
  * 
  * @author amit bhayani
- * 
+ * @author baranowb
  */
+@SuppressWarnings("unused")
 public class AsnInputStream extends FilterInputStream {
 
 	private static final int DATA_BUCKET_SIZE = 1024;
-
+	
+	//tmp variables
+	private static final int REAL_BB_SIGN_POSITIVE = 0x00;
+	private static final int REAL_BB_SIGN_NEGATIVE = 0x01;
+	private static final int REAL_BB_SIGN_MASK = 0x40;
+	/**
+	 * Mask for base:
+	 * <ul>
+	 * <li><b>00</b> base 2</li>
+	 * <li><b>01</b> base 8</li>
+	 * <li><b>11</b> base 16</li>
+	 * </ul>
+	 */
+	private static final int REAL_BB_BASE_MASK = 0x30;
+	/**
+	 * Mask for scale:
+	 * <ul>
+	 * <li><b>00</b> 0</li>
+	 * <li><b>01</b> 1</li>
+	 * <li><b>10</b> 2</li>
+	 * <li><b>11</b> 3</li>
+	 * </ul>
+	 */
+	private static final int REAL_BB_SCALE_MASK = 0xC;
+	/**
+	 * Mask for encoding exponent (length):
+	 * <ul>
+	 * <li><b>00</b> on the following octet</li>
+	 * <li><b>01</b> on the 2 following octets</li>
+	 * <li><b>10</b> on the 3 following octets</li>
+	 * <li><b>11</b> encoding of the length of the 2's-complement encoding of
+	 * exponent on the following octet, and 2's-complement encoding of exponent
+	 * on the other octets</li>
+	 * </ul>
+	 */
+	private static final int REAL_BB_EE_MASK = 0x3;
+	
+	private static final int REAL_NR1 = 0x01;
+	private static final int REAL_NR2 = 0x10;
+	private static final int REAL_NR3 = 0x11;
+	
+	
+	
 	public AsnInputStream(InputStream in) {
 		super(in);
 	}
@@ -134,14 +178,165 @@ public class AsnInputStream extends FilterInputStream {
 
 	/**
 	 * Reads and converts for {@link Tag#REAL} primitive
+	 * 
+	 * @param base10
+	 *            -
+	 *            <ul>
+	 *            <li><b>true</b> if real is encoded in base of 10 ( decimal )</li>
+	 *            <li><b>false</b> if real is encoded in base of 2 ( binary )</li>
+	 *            </ul>
 	 * @return
 	 * @throws AsnException
 	 * @throws IOException
 	 */
 	public double readReal() throws AsnException, IOException {
-		// TODO : Impl this
-		return 0.0;
+		//see: http://en.wikipedia.org/wiki/Single_precision_floating-point_format
+		//   : http://en.wikipedia.org/wiki/Double_precision_floating-point_format
+		int length = readLength();
+		//universal part, regardles of base10 value
+		if(length == 0)
+		{
+			//yeah, nice
+			return 0.0;
+		}
+		
+		if(length == 1)
+		{
+			//+INF/-INF
+			int b = this.read() & 0xFF;
+			if(b == 0x40)
+			{
+				return Double.POSITIVE_INFINITY;
+			}else if(b == 0x41)
+			{
+				return Double.NEGATIVE_INFINITY;
+			}else
+			{
+				throw new AsnException("Real length indicates positive/negative infinity, but value is wrong: "+Integer.toBinaryString(b));
+			}
+		}
+		int infoBits = this.read(); 
+		//substract on for info bits
+		length--;
+		
+		//only binary has first bit of info set to 1;
+		boolean base10 = (((infoBits>>7) & 0x01) == 0x01);
+		//now the tricky part, this takes into account base10
+		if(base10)
+		{
+			//encoded as char string
+			String nrRep = this.readIA5String(length);
+			//should NR be retained somewhere?
+			return Double.parseDouble(nrRep);
+		}else
+		{
+			//encoded binary - mantisa and all that funny digits.
+			//the REAL type has been semantically equivalent to the
+			//type:
+			//[UNIVERSAL 9] IMPLICIT SEQUENCE {
+			//mantissa INTEGER (ALL EXCEPT 0),
+			//base INTEGER (2|10), 
+			//exponent INTEGER }
+			//sign x N x (2 ^ scale) x (base ^ E); --> base ^ E == 2 ^(E+x) == where x 
+			int tmp = 0;
+			
+			
+			int signBit = (infoBits & REAL_BB_SIGN_MASK);
+			//now lets determine length of e(exponent) and n(positive integer)
+			long e = 0;
+			int s = (infoBits & REAL_BB_SCALE_MASK)>>2;
+			
+			
+			tmp = infoBits & REAL_BB_EE_MASK;
+			if(tmp == 0x0)
+			{
+				e = this.read() & 0xFF;
+				length--;
+				//real representation
+			}else if( tmp == 0x01)
+			{
+				e = (this.read() & 0xFF)<<8;
+				length--;
+				e |= this.read() & 0xFF;
+				length--;
+				if(e>0x7FF)
+				{
+					//to many bits... Double
+					throw new AsnException("Exponent part has to many bits lit, allowed are 11, present: "+Long.toBinaryString(e));
+				}
+				//prepare E to become bits - this may cause loose of data, 
+				e &=0x7FF;
+			}else
+			{
+				//this is too big for java to handle.... we can have up to 11 bits..
+				throw new AsnException("Exponent part has to many bits lit, allowed are 11, but stream indicates 3 or more octets");
+			}
+			//now we may read up to 52bits
+			//7*8 == 56, we need up to 52
+			if(length>7)
+			{
+				throw new AsnException("Length exceeds JAVA double mantisa size");
+			}
+			
+			long n = 0;
+			while(length>0)
+			{
+				--length;
+				long readV = (((long)this.read() << 32)>>>32) & 0xFF;
+				readV= readV << (length*8);
+				//((long) in.readInt() << 32) >>> 32;
+				n|=readV;
+			}
+			
+			//we have real part, now lets add that scale
+			n = n<< (2^s);
+			//now lets take care of different base, we are base2: base8 == base2^3,base16== base2^4
+			int base = (infoBits & REAL_BB_BASE_MASK) >> 4;
+			if(base == 0x01)
+			{
+				e= e*3; // (2^3)^e
+			}else if(base == 0x10)
+			{
+				e= e*4; // (2^4)^e
+			}
+			//do check again.
+			if(e>0x7FF)
+			{
+				//to many bits... Double
+				throw new AsnException("Exponent part has to many bits lit, allowed are 11, present: "+Long.toBinaryString(e));
+			}
+			
+			//double is 8bytes
+			byte[] doubleRep = new byte[8];
+			//set sign
+			doubleRep[0] = (byte) (signBit<<7);
+			//now get first 7 bits of e;
+			doubleRep[0]|=((e>>7) & 0xFF);
+			doubleRep[1] = (byte) ( (e & 0x0F)<<4);
+			//from back its easier
+			doubleRep[7] = (byte) n;
+			doubleRep[6] = (byte) (n>>8);
+			doubleRep[5] = (byte) (n>>16);
+			doubleRep[4] = (byte) (n>>24);
+			doubleRep[3] = (byte) (n>>32);
+			doubleRep[2] = (byte) (n>>40);
+			doubleRep[1] |= (byte) ( (n>>48) & 0x0F);
+			ByteBuffer bb=ByteBuffer.wrap(doubleRep);
+			return bb.getDouble();
+
+			
+			
+		}
+		
+		
 	}
+	
+	
+	public String readIA5String(int length) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 	/**
 	 * Reads and converts for {@link Tag#STRING_OCTET} primitive
 	 * @param length
