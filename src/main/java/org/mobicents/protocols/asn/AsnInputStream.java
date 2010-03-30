@@ -131,6 +131,19 @@ public class AsnInputStream extends FilterInputStream {
 		return 0.0;
 	}
 
+	public void readOctetString(int length, boolean primitive, OutputStream outputStream) throws AsnException,
+			IOException {
+		if (primitive) {
+			this.fillOutputStream(outputStream, length);
+		} else {
+			if (length != 0x80) {
+				throw new AsnException("The length field of Constructed OctetString is not 0x80");
+			}
+		}
+	}
+
+	
+	// private helper methods -------------------------------------------------
 	private void fillOutputStream(OutputStream stream, int length) throws AsnException, IOException {
 		byte[] dataBucket = new byte[DATA_BUCKET_SIZE];
 		int readCount;
@@ -144,15 +157,6 @@ public class AsnInputStream extends FilterInputStream {
 		}
 	}
 
-	public void readOctetString(int length, boolean primitive, OutputStream outputStream) throws AsnException,
-			IOException {
-		if (primitive) {
-			this.fillOutputStream(outputStream, length);
-		} else {
-			if (length != 0x80) {
-				throw new AsnException("The length field of Constructed OctetString is not 0x80");
-			}
-		}
-	}
-
+	
+	
 }
