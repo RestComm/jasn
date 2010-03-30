@@ -121,7 +121,7 @@ public class AsnInputStreamTest extends TestCase {
 		assertNotNull(tag);
 		assertEquals(Tag.CLASS_UNIVERSAL, tag.getTagClass());
 		assertEquals(true, tag.isPrimitive);
-		assertEquals(Tag.OCTET_STRING, tag.getValue());
+		assertEquals(Tag.STRING_OCTET, tag.getValue());
 
 		int length = asnIs.readLength();
 
