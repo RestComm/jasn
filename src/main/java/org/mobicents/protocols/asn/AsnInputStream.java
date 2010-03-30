@@ -4,13 +4,16 @@ import java.io.EOFException;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 /**
  * 
  * @author amit bhayani
- *
+ * 
  */
 public class AsnInputStream extends FilterInputStream {
+
+	private static final int DATA_BUCKET_SIZE = 1024;
 
 	public AsnInputStream(InputStream in) {
 		super(in);
@@ -101,6 +104,55 @@ public class AsnInputStream extends FilterInputStream {
 
 		// If temp is not zero stands for true irrespective of actual Value
 		return (temp != 0);
+	}
+
+	public long readInteger(int length) throws AsnException, IOException {
+		long value = 0;
+		byte temp;
+
+		if (length == -1)
+			throw new AsnException("Length for Integer is -1");
+		if (length == 0)
+			return value;
+
+		temp = (byte) this.read();
+		value = temp; // sign extended
+
+		for (int i = 0; i < length - 1; i++) {
+			temp = (byte) this.read();
+			value = (value << 8) | (0x00FF & temp);
+		}
+
+		return value;
+	}
+
+	// TODO : Impl this
+	public double readReal() throws AsnException, IOException {
+		return 0.0;
+	}
+
+	private void fillOutputStream(OutputStream stream, int length) throws AsnException, IOException {
+		byte[] dataBucket = new byte[DATA_BUCKET_SIZE];
+		int readCount;
+
+		while (length != 0) {
+			readCount = read(dataBucket, 0, length < DATA_BUCKET_SIZE ? length : DATA_BUCKET_SIZE);
+			if (readCount == -1)
+				throw new AsnException("input stream has reached the end");
+			stream.write(dataBucket, 0, readCount);
+			length -= readCount;
+		}
+	}
+
+	public void readOctetString(int length, boolean primitive, OutputStream outputStream) throws AsnException,
+			IOException {
+		if (primitive) {
+			this.fillOutputStream(outputStream, length);
+		} else {
+			if (length != 0x80) {
+				throw new AsnException("The length field of Constructed OctetString is not 0x80");
+			}
+		}
 	}
 
 }

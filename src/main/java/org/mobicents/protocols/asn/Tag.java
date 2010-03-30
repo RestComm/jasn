@@ -21,6 +21,12 @@ public class Tag {
 	// The last five bits (bits 5 to 1) encode the number of the tag in tag octet
 	protected static final int NUMBER_MASK = 0x1F;
 
+	// Universal class tag assignments as per X.680-0207, Section 8.4
+	public static final int BOOLEAN = 0x01;
+	public static final int INTEGER = 0x02;
+	public static final int ENUMERATED = 0x0A;
+	public static final int OCTET_STRING = 0x04;
+
 	int tagClass = -1;
 	boolean isPrimitive;
 	int value = -1;
