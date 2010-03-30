@@ -6,7 +6,10 @@ package org.mobicents.protocols.asn;
  * 
  */
 public class Tag {
-
+	
+	/**
+	 * Class of tag used with primitives
+	 */
 	public static final int CLASS_UNIVERSAL = 0x0;
 	public static final int CLASS_APPLICATION = 0x1;
 	public static final int CLASS_CONTEXT_SPECIFIC = 0x2;
@@ -24,6 +27,10 @@ public class Tag {
 	// Universal class tag assignments as per X.680-0207, Section 8.4
 	public static final int BOOLEAN = 0x01;
 	public static final int INTEGER = 0x02;
+	public static final int STRING_BIT = 0x03;
+	public static final int STRING_OCTET = 0x04;
+	public static final int NULL = 0x05;
+	public static final int REAL = 0x09;
 	public static final int ENUMERATED = 0x0A;
 	public static final int OCTET_STRING = 0x04;
 
