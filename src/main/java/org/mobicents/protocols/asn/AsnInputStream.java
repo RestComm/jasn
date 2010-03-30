@@ -89,7 +89,7 @@ public class AsnInputStream extends FilterInputStream {
 	}
 
 	/**
-	 * 
+	 * Reads and converts for {@link Tag#BOOLEAN} primitive
 	 * @return
 	 * @throws AsnException
 	 * @throws IOException
@@ -105,7 +105,13 @@ public class AsnInputStream extends FilterInputStream {
 		// If temp is not zero stands for true irrespective of actual Value
 		return (temp != 0);
 	}
-
+	/**
+	 * Reads and converts for {@link Tag#INTEGER} primitive
+	 * @param length
+	 * @return
+	 * @throws AsnException
+	 * @throws IOException
+	 */
 	public long readInteger(int length) throws AsnException, IOException {
 		long value = 0;
 		byte temp;
@@ -126,11 +132,24 @@ public class AsnInputStream extends FilterInputStream {
 		return value;
 	}
 
-	// TODO : Impl this
+	/**
+	 * Reads and converts for {@link Tag#REAL} primitive
+	 * @return
+	 * @throws AsnException
+	 * @throws IOException
+	 */
 	public double readReal() throws AsnException, IOException {
+		// TODO : Impl this
 		return 0.0;
 	}
-
+	/**
+	 * Reads and converts for {@link Tag#STRING_OCTET} primitive
+	 * @param length
+	 * @param primitive
+	 * @param outputStream
+	 * @throws AsnException
+	 * @throws IOException
+	 */
 	public void readOctetString(int length, boolean primitive, OutputStream outputStream) throws AsnException,
 			IOException {
 		if (primitive) {
@@ -141,7 +160,19 @@ public class AsnInputStream extends FilterInputStream {
 			}
 		}
 	}
-
+	/**
+	 * Read and converts(actually does not since its null) for {@link Tag#NULL} primitive
+	 */
+	public void readNull() throws AsnException,
+	IOException
+	{
+		int length = readLength();
+		if (length != 0)
+			throw new AsnException("Null length should be 0 but is " + length);
+		
+		//and thats it. Null has no V part. Its encoded as follows:
+		//T[0000 0101] L[0000 0000] V[]
+	}
 	
 	// private helper methods -------------------------------------------------
 	private void fillOutputStream(OutputStream stream, int length) throws AsnException, IOException {
