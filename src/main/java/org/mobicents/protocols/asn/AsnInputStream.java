@@ -292,6 +292,7 @@ public class AsnInputStream extends FilterInputStream {
 			n = n<< (2^s);
 			//now lets take care of different base, we are base2: base8 == base2^3,base16== base2^4
 			int base = (infoBits & REAL_BB_BASE_MASK) >> 4;
+			//is this correct?
 			if(base == 0x01)
 			{
 				e= e*3; // (2^3)^e
