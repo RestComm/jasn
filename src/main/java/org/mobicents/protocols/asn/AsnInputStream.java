@@ -265,6 +265,7 @@ public class AsnInputStream extends FilterInputStream {
 				length--;
 				if(e>0x7FF)
 				{
+					
 					//to many bits... Double
 					throw new AsnException("Exponent part has to many bits lit, allowed are 11, present: "+Long.toBinaryString(e));
 				}
@@ -292,7 +293,11 @@ public class AsnInputStream extends FilterInputStream {
 				
 				n|=readV;
 			}
-			
+			//check for possible overflow
+			if(n>4503599627370495L)
+			{
+				throw new AsnException("Overflow on mantissa");
+			}
 			//we have real part, now lets add that scale; this is M x (2^F), which essentialy is bit shift :)
 			int shift = (int) Math.pow(2, s)-1; // -1 for 2, where we dont shift
 			n = n<< (shift); // this might be bad code.
