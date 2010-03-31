@@ -3,7 +3,7 @@ package org.mobicents.protocols.asn;
 /**
  * 
  * @author amit bhayani
- * 
+ * @author baranowb
  */
 public class Tag {
 	
@@ -20,7 +20,8 @@ public class Tag {
 
 	// The next bit (bit six) is called the primitive/constructed (P/C) bit
 	protected static final int PC_MASK = 0x20;
-
+	public static final int PC_PRIMITIVITE = 0x0;
+	public static final int PC_CONSTRUCTED = 0x1;
 	// The last five bits (bits 5 to 1) encode the number of the tag in tag octet
 	protected static final int NUMBER_MASK = 0x1F;
 

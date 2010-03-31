@@ -1,5 +1,6 @@
 package org.mobicents.protocols.asn;
 
+import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.FilterInputStream;
 import java.io.IOException;
@@ -193,7 +194,7 @@ public class AsnInputStream extends FilterInputStream {
 		//see: http://en.wikipedia.org/wiki/Single_precision_floating-point_format
 		//   : http://en.wikipedia.org/wiki/Double_precision_floating-point_format
 		int length = readLength();
-		//universal part, regardles of base10 value
+		//universal part
 		if(length == 0)
 		{
 			//yeah, nice
@@ -220,13 +221,16 @@ public class AsnInputStream extends FilterInputStream {
 		length--;
 		
 		//only binary has first bit of info set to 1;
-		boolean base10 = (((infoBits>>7) & 0x01) == 0x01);
+		boolean base10 = (((infoBits>>7) & 0x01) == 0x00);
 		//now the tricky part, this takes into account base10
 		if(base10)
 		{
 			//encoded as char string
-			String nrRep = this.readIA5String(length);
-			//should NR be retained somewhere?
+			ByteArrayOutputStream bos = new ByteArrayOutputStream(length);
+			this.readIA5String(length,true,bos);
+			//IA5 == ASCII...?
+			String nrRep = new String(bos.toByteArray(),"US-ASCII");
+			//this will swallow NR(1-3) and give proper double :)
 			return Double.parseDouble(nrRep);
 		}else
 		{
@@ -283,13 +287,16 @@ public class AsnInputStream extends FilterInputStream {
 			{
 				--length;
 				long readV = (((long)this.read() << 32)>>>32) & 0xFF;
+				
 				readV= readV << (length*8);
-				//((long) in.readInt() << 32) >>> 32;
+				
 				n|=readV;
 			}
 			
-			//we have real part, now lets add that scale
-			n = n<< (2^s);
+			//we have real part, now lets add that scale; this is M x (2^F), which essentialy is bit shift :)
+			int shift = (int) Math.pow(2, s)-1; // -1 for 2, where we dont shift
+			n = n<< (shift); // this might be bad code.
+	
 			//now lets take care of different base, we are base2: base8 == base2^3,base16== base2^4
 			int base = (infoBits & REAL_BB_BASE_MASK) >> 4;
 			//is this correct?
@@ -312,7 +319,7 @@ public class AsnInputStream extends FilterInputStream {
 			//set sign
 			doubleRep[0] = (byte) (signBit<<7);
 			//now get first 7 bits of e;
-			doubleRep[0]|=((e>>7) & 0xFF);
+			doubleRep[0]|=((e>>4) & 0xFF);
 			doubleRep[1] = (byte) ( (e & 0x0F)<<4);
 			//from back its easier
 			doubleRep[7] = (byte) n;
@@ -331,11 +338,16 @@ public class AsnInputStream extends FilterInputStream {
 		
 		
 	}
-	
-	
-	public String readIA5String(int length) {
-		// TODO Auto-generated method stub
-		return null;
+	//FIXME: this should be "read string" or something, but lest leave it for now
+	public void readIA5String(int length, boolean primitive, OutputStream outputStream)  throws AsnException,
+			IOException {
+		if (primitive) {
+			this.fillOutputStream(outputStream, length);
+		} else {
+			if (length != 0x80) {
+				throw new AsnException("The length field of Constructed OctetString is not 0x80");
+			}
+		}
 	}
 
 	/**

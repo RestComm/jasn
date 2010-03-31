@@ -135,5 +135,46 @@ public class AsnInputStreamTest extends TestCase {
 			assertTrue(resultData[i] == data[i + 2]);
 		}
 	}
+	//those two are completly made up, couldnt find trace
+	@Test
+	public void testRealBinary() throws Exception
+	{
+		
+		//118.625
+		byte[] binary1 = new byte[]
+		        {
+				//TAG;
+				(Tag.CLASS_UNIVERSAL<<6)|(Tag.PC_PRIMITIVITE<<5) | Tag.REAL,
+				//Length - this is definite - we dont handle more? do we?
+				0x0A,//1(info bits) 2(exponent 7(mantisa)
+				 //info bits  (binary,sign,BB,FF,EE)
+				(byte)(0x80 | (0x0<<6) | 0x00 <<4 | 0x01)  , //1 0 00(base2) 00(scale = 0) 01 ( two octets for exponent
+				//exponent, two octets
+				//100 00000101
+				0x04,
+				0x05,
+				//mantisa
+				//1101  10101000  00000000  00000000  00000000  00000000  00000000
+		
+				0x0D,
+				(byte)0xA8,
+				0x00,
+				0x00,
+				0x00,
+				0x00,
+				0x00
+		         };
+		
+		ByteArrayInputStream baIs = new ByteArrayInputStream(binary1);
+		AsnInputStream asnIs = new AsnInputStream(baIs);
+		Tag tag = asnIs.readTag();
+		assertNotNull(tag);
+		assertEquals(Tag.CLASS_UNIVERSAL, tag.getTagClass());
+		assertEquals(true, tag.isPrimitive);
+		assertEquals(Tag.REAL, tag.getValue());
+		double d = asnIs.readReal();
+		assertEquals("Decoded value is not proper!!",118.625d, d);
+	
+	}
 
 }
