@@ -204,7 +204,7 @@ public class AsnInputStream extends FilterInputStream {
 		if (base10) {
 			// encoded as char string
 			ByteArrayOutputStream bos = new ByteArrayOutputStream(length);
-			this.readIA5String(length, true, bos);
+			this.fillOutputStream(bos, length);
 			// IA5 == ASCII...?
 			String nrRep = new String(bos.toByteArray(), "US-ASCII");
 			// this will swallow NR(1-3) and give proper double :)
@@ -308,25 +308,30 @@ public class AsnInputStream extends FilterInputStream {
 
 	}
 
-	// FIXME: this should be "read string" or something, but lest leave it for now
-	public void readIA5String(int length, boolean primitive, OutputStream outputStream) throws AsnException,
-			IOException {
-		if (primitive) {
-			this.fillOutputStream(outputStream, length);
-		} else {
-			if (length != 0x80) {
-				throw new AsnException("The length field of Constructed OctetString is not 0x80");
-			}
-		}
-	}
 	
 	public String readIA5String() throws AsnException, IOException
+	{
+		
+		return readString(BERStatics.STRING_IA5_ENCODING,Tag.STRING_IA5);
+		
+	}
+	
+	public String readIUTF8String() throws AsnException, IOException
+	{
+		return readString(BERStatics.STRING_UTF8_ENCODING,Tag.STRING_UTF8);	
+		
+	}
+	private String readString(String charset, int tagValue) throws IOException, AsnException
 	{
 		int length = readLength();
 		if(tagClass != Tag.CLASS_UNIVERSAL)
 		{
 			throw new AsnException("Wrong tag class for IA5 string, should be universal["+Tag.CLASS_UNIVERSAL+"]: "+tagClass);
 		}
+		
+		//NOTE: this is required since we read tag and length before going into recursive function
+		//
+		
 		//check
 		//constructed
 		if(pCBit == 0)
@@ -338,7 +343,7 @@ public class AsnInputStream extends FilterInputStream {
 				//short form
 				ByteArrayOutputStream bos = new ByteArrayOutputStream(length);
 				this.fillOutputStream(bos, length);
-				String s = new String(bos.toByteArray(),BERStatics.STRING_IA5_ENCODING);
+				String s = new String(bos.toByteArray(),charset);
 				return s;
 			}else
 			{
@@ -368,12 +373,10 @@ public class AsnInputStream extends FilterInputStream {
 			//its case: T L [TLV TLV TL[TLV TLV 0 0] 0 0]
 			
 			ByteArrayOutputStream bos = new ByteArrayOutputStream();
-			this.readConstructedString(bos,Tag.STRING_IA5);
-			String s = new String(bos.toByteArray(),BERStatics.STRING_IA5_ENCODING);
+			this.readConstructedString(bos,tagValue);
+			String s = new String(bos.toByteArray(),charset);
 			return s;
 		}
-		
-		
 	}
 	/**
 	 * Reads string from constructed form, it calls itself as many times as needed to get full content of string
@@ -384,6 +387,9 @@ public class AsnInputStream extends FilterInputStream {
 	 */
 	private void readConstructedString(ByteArrayOutputStream bos, int parentTag) throws AsnException, IOException
 	{
+		
+		
+		
 		while(_readConstructedString(bos, parentTag))
 		{
 			
