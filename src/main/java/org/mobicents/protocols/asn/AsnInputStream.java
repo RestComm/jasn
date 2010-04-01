@@ -220,12 +220,12 @@ public class AsnInputStream extends FilterInputStream {
 			// sign x N x (2 ^ scale) x (base ^ E); --> base ^ E == 2 ^(E+x) == where x
 			int tmp = 0;
 
-			int signBit = (infoBits & REAL_BB_SIGN_MASK) << 1;
+			int signBit = (infoBits & BERStatics.REAL_BB_SIGN_MASK) << 1;
 			// now lets determine length of e(exponent) and n(positive integer)
 			long e = 0;
-			int s = (infoBits & REAL_BB_SCALE_MASK) >> 2;
+			int s = (infoBits & BERStatics.REAL_BB_SCALE_MASK) >> 2;
 
-			tmp = infoBits & REAL_BB_EE_MASK;
+			tmp = infoBits & BERStatics.REAL_BB_EE_MASK;
 			if (tmp == 0x0) {
 				e = this.read() & 0xFF;
 				length--;
@@ -272,7 +272,7 @@ public class AsnInputStream extends FilterInputStream {
 			n = n << (shift); // this might be bad code.
 
 			// now lets take care of different base, we are base2: base8 == base2^3,base16== base2^4
-			int base = (infoBits & REAL_BB_BASE_MASK) >> 4;
+			int base = (infoBits & BERStatics.REAL_BB_BASE_MASK) >> 4;
 			// is this correct?
 			if (base == 0x01) {
 				e = e * 3; // (2^3)^e
