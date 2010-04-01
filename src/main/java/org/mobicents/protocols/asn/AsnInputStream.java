@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
-
+import static org.mobicents.protocols.asn.BERStatics.*;
 /**
  * 
  * @author amit bhayani
@@ -17,46 +17,7 @@ import java.nio.ByteBuffer;
 public class AsnInputStream extends FilterInputStream {
 
 	private static final int DATA_BUCKET_SIZE = 1024;
-	
-	// tmp variables
-	private static final int REAL_BB_SIGN_POSITIVE = 0x00;
-	private static final int REAL_BB_SIGN_NEGATIVE = 0x01;
-	private static final int REAL_BB_SIGN_MASK = 0x40;
-	/**
-	 * Mask for base:
-	 * <ul>
-	 * <li><b>00</b> base 2</li>
-	 * <li><b>01</b> base 8</li>
-	 * <li><b>11</b> base 16</li>
-	 * </ul>
-	 */
-	private static final int REAL_BB_BASE_MASK = 0x30;
-	/**
-	 * Mask for scale:
-	 * <ul>
-	 * <li><b>00</b> 0</li>
-	 * <li><b>01</b> 1</li>
-	 * <li><b>10</b> 2</li>
-	 * <li><b>11</b> 3</li>
-	 * </ul>
-	 */
-	private static final int REAL_BB_SCALE_MASK = 0xC;
-	/**
-	 * Mask for encoding exponent (length):
-	 * <ul>
-	 * <li><b>00</b> on the following octet</li>
-	 * <li><b>01</b> on the 2 following octets</li>
-	 * <li><b>10</b> on the 3 following octets</li>
-	 * <li><b>11</b> encoding of the length of the 2's-complement encoding of exponent on the following octet, and
-	 * 2's-complement encoding of exponent on the other octets</li>
-	 * </ul>
-	 */
-	private static final int REAL_BB_EE_MASK = 0x3;
-	
-	private static final int REAL_NR1 = 0x01;
-	private static final int REAL_NR2 = 0x10;
-	private static final int REAL_NR3 = 0x11;
-	
+
 	
 	// TODO : There should be getter / setter for these two?
 	private int tagClass =-1;
