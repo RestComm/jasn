@@ -96,7 +96,7 @@ public class AsnInputStreamTest extends TestCase {
 		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 
 		int tagValue = asnIs.readTag();
-		asnIs.readBitString(byteArrayOutputStream, tagValue);
+		asnIs.readBitString(byteArrayOutputStream);
 
 		byte[] resultData = byteArrayOutputStream.toByteArray();
 
@@ -108,7 +108,7 @@ public class AsnInputStreamTest extends TestCase {
 
 	@Test
 	public void testBitStringConstructed() throws Exception {
-		byte[] data = new byte[] { 0x23, (byte) 0x80, 0x03, 0x02, (byte) 0xF0, (byte) 0xF0, 0x03, 0x02, 0x02, (byte)0xF4,
+		byte[] data = new byte[] { 0x23, (byte) 0x80, 0x03, 0x03, 0x00, (byte) 0xF0, (byte) 0xF0, 0x03, 0x02, 0x02, (byte)0xF4,
 				0x00 };
 
 		byte[] octetString = new byte[] { (byte) 0xF0, (byte) 0xF0, (byte)0xF4 };
@@ -119,7 +119,7 @@ public class AsnInputStreamTest extends TestCase {
 		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 		// here we have to explicitly read the Tag
 		int tagValue = asnIs.readTag();
-		asnIs.readBitString(byteArrayOutputStream, tagValue);
+		asnIs.readBitString(byteArrayOutputStream);
 
 		byte[] resultData = byteArrayOutputStream.toByteArray();
 
