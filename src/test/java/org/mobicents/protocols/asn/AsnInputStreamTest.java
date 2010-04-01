@@ -153,10 +153,48 @@ public class AsnInputStreamTest extends TestCase {
 
 		ByteArrayInputStream baIs = new ByteArrayInputStream(binary1);
 		AsnInputStream asnIs = new AsnInputStream(baIs);
-
+		int tagValue = asnIs.readTag();
+		
+		//assertEquals(Tag.CLASS_UNIVERSAL, Tag.getTagClass(tagValue));
+		//assertTrue(Tag.isPrimitive(tagValue);
+		//assertEquals(Tag.REAL, Tag.getType(tagValue));
 		double d = asnIs.readReal();
-		assertEquals("Decoded value is not proper!!", 118.625d, d);
-
+		assertEquals("Decoded value is not proper!!",118.625d, d);
+		//-118.625
+		byte[] binary2 = new byte[]
+		        {
+				//TAG;
+				(Tag.CLASS_UNIVERSAL<<6)|(Tag.PC_PRIMITIVITE<<5) | Tag.REAL,
+				//Length - this is definite - we dont handle more? do we?
+				0x0A,//1(info bits) 2(exponent 7(mantisa)
+				 //info bits  (binary,sign,BB,FF,EE)
+				(byte)(0x80 | (0x1<<6) | 0x00 <<4 | 0x01)  , //1 0 00(base2) 00(scale = 0) 01 ( two octets for exponent
+				//exponent, two octets
+				//100 00000101
+				0x04,
+				0x05,
+				//mantisa
+				//1101  10101000  00000000  00000000  00000000  00000000  00000000
+		
+				0x0D,
+				(byte)0xA8,
+				0x00,
+				0x00,
+				0x00,
+				0x00,
+				0x00
+		         };
+		
+		baIs = new ByteArrayInputStream(binary1);
+		asnIs = new AsnInputStream(baIs);
+		tagValue = asnIs.readTag();
+		
+		//assertEquals(Tag.CLASS_UNIVERSAL, Tag.getTagClass(tagValue));
+		//assertTrue(Tag.isPrimitive(tagValue);
+		//assertEquals(Tag.REAL, Tag.getType(tagValue));
+		d = asnIs.readReal();
+		assertEquals("Decoded value is not proper!!",-118.625d, d);
+	
 	}
 
 }
