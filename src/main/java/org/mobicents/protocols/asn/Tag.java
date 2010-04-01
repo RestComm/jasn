@@ -5,7 +5,7 @@ package org.mobicents.protocols.asn;
  * @author amit bhayani
  * @author baranowb
  */
-public interface Tag {
+public class Tag {
 	
 	/**
 	 * Class of tag used with primitives
@@ -22,8 +22,9 @@ public interface Tag {
 	public static final int PC_MASK = 0x20;
 	public static final int PC_PRIMITIVITE = 0x0;
 	public static final int PC_CONSTRUCTED = 0x1;
+
 	// The last five bits (bits 5 to 1) encode the number of the tag in tag octet
-	public static final int NUMBER_MASK = 0x1F;
+	public static final int TAG_MASK = 0x1F;
 
 	// Universal class tag assignments as per X.680-0207, Section 8.4
 	public static final int BOOLEAN = 0x01;
@@ -36,4 +37,24 @@ public interface Tag {
 
 
 
+	private Tag() {
+		super();
+	
+	}
+
+
+	public static boolean isPrimitive(int tagValue)
+	{
+		//no shift needed, since for primitive its '0'
+		return (tagValue & PC_MASK) == PC_PRIMITIVITE;
+	}
+
+	public static int getSimpleTagValue(int tagValue)
+	{
+		return tagValue & TAG_MASK;
+	}
+	public static boolean isUniversal(int tagValue)
+	{
+		return (tagValue & CLASS_MASK) == CLASS_UNIVERSAL;
+	}
 }

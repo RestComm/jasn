@@ -43,13 +43,13 @@ public class AsnInputStream extends FilterInputStream {
 		tagClass = (b & Tag.CLASS_MASK) >> 6;
 		pCBit = (b & Tag.PC_MASK) >> 5;
 
-		int value = b & Tag.NUMBER_MASK;
+		int value = b & Tag.TAG_MASK;
 
 		// For larger tag values, the first octet has all ones in bits 5 to 1, and the tag value is then encoded in
 		// as many following octets as are needed, using only the least significant seven bits of each octet,
 		// and using the minimum number of octets for the encoding. The most significant bit (the "more"
 		// bit) is set to 1 in the first following octet, and to zero in the last.
-		if (value == Tag.NUMBER_MASK) {
+		if (value == Tag.TAG_MASK) {
 			byte temp;
 			value = 0;
 			do {
@@ -319,6 +319,7 @@ public class AsnInputStream extends FilterInputStream {
 			}
 		}
 	}
+	
 
 	private int getPadMask(int pad) throws AsnException {
 		switch (pad) {
