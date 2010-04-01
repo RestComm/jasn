@@ -107,7 +107,7 @@ public class AsnInputStream extends FilterInputStream {
 		int tagValue = this.readTag();
 
 		if (tagValue != Tag.BOOLEAN) {
-			throw new AsnException("Tag doesn't represent Boolean. Tag Class " + this.tagClass + " P/C falg "
+			throw new AsnException("Tag doesn't represent Boolean. Tag Class " + this.tagClass + " P/C flag "
 					+ this.pCBit + " Tag Value " + tagValue);
 		}
 		byte temp;
@@ -134,7 +134,7 @@ public class AsnInputStream extends FilterInputStream {
 		int tagValue = this.readTag();
 
 		if (tagValue != Tag.INTEGER) {
-			throw new AsnException("Tag doesn't represent Integer. Tag Class " + this.tagClass + " P/C falg "
+			throw new AsnException("Tag doesn't represent Integer. Tag Class " + this.tagClass + " P/C flag "
 					+ this.pCBit + " Tag Value " + tagValue);
 		}
 
@@ -320,7 +320,15 @@ public class AsnInputStream extends FilterInputStream {
 		}
 	}
 	
-
+	public String readIA5String() throws AsnException, IOException
+	{
+		int length = readLength();
+		
+		//check
+		
+		
+	}
+	
 	private int getPadMask(int pad) throws AsnException {
 		switch (pad) {
 		case 0:
@@ -390,7 +398,7 @@ public class AsnInputStream extends FilterInputStream {
 	public void readOctetString(OutputStream outputStream, int tagValue) throws AsnException, IOException {
 
 		// if(tagValue != Tag.STRING_OCTET){
-		// throw new AsnException("Tag doesn't represent Octet String. Tag Class "+ this.tagClass + " P/C falg "+
+		// throw new AsnException("Tag doesn't represent Octet String. Tag Class "+ this.tagClass + " P/C flag "+
 		// this.pCBit +"
 		// Tag Value "+tagValue);
 		// }
