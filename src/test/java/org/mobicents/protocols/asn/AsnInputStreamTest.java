@@ -239,4 +239,59 @@ public class AsnInputStreamTest extends TestCase {
 		
 	}
 
+	@Test
+	public void testRealBase10() throws Exception
+	{
+		//TODO get real data trace?
+		String[] digs= new String[]{"   0004902"
+		        ,"  +0004902"
+		        ," -4902"
+		        ,"4902.00"
+		        ,"4902."
+		        ,".5"
+		        ," 0.3E-04"
+		        ,"-2.8E+000000"
+		        ,"   000004.50000E123456789"
+		        ,"+5.6e+03"
+		        ,"+0.56E+4"};
+		
+		
+		for(int index = 0;index<digs.length;index++)
+		{
+			double d = Double.parseDouble(digs[index]);
+			ByteArrayOutputStream bos = new ByteArrayOutputStream(20);
+			//write tag
+			bos.write((Tag.CLASS_UNIVERSAL<<6)|(Tag.PC_PRIMITIVITE<<5) | Tag.REAL);
+			//length is unknown for a bit, lets do the math
+			byte[] data = digs[index].getBytes("US-ASCII");
+			bos.write(1+data.length); // 1 for 2 bits for base10 indicator and 6 bits for NR
+			int NR = 0; // for now it is ignored
+			
+			if(index<=2)
+			{
+				//NR1
+				NR = BERStatics.REAL_NR1;
+			}else if(index<=5)
+			{
+				NR = BERStatics.REAL_NR2;
+			}else
+			{
+				NR = BERStatics.REAL_NR3;
+			}
+			bos.write( ((0x00<<6))| (NR));
+			bos.write(data);
+			ByteArrayInputStream baIs = new ByteArrayInputStream(bos.toByteArray());
+			AsnInputStream asnIs = new AsnInputStream(baIs);
+			int tagValue = asnIs.readTag();
+			
+			//assertEquals(Tag.CLASS_UNIVERSAL, Tag.getTagClass(tagValue));
+			//assertTrue(Tag.isPrimitive(tagValue);
+			//assertEquals(Tag.REAL, Tag.getType(tagValue));
+			double dd = asnIs.readReal();
+			assertEquals("Decoded value is not proper!!",d, dd);
+		}
+		
+		
+		
+	}
 }
