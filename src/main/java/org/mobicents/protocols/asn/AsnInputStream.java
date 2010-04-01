@@ -264,7 +264,7 @@ public class AsnInputStream extends FilterInputStream {
 			int tmp = 0;
 			
 			
-			int signBit = (infoBits & REAL_BB_SIGN_MASK);
+			int signBit = (infoBits & REAL_BB_SIGN_MASK) << 1;
 			//now lets determine length of e(exponent) and n(positive integer)
 			long e = 0;
 			int s = (infoBits & REAL_BB_SCALE_MASK)>>2;
@@ -340,8 +340,8 @@ public class AsnInputStream extends FilterInputStream {
 			
 			//double is 8bytes
 			byte[] doubleRep = new byte[8];
-			//set sign
-			doubleRep[0] = (byte) (signBit<<7);
+			//set sign, no need to shift
+			doubleRep[0] = (byte) (signBit);
 			//now get first 7 bits of e;
 			doubleRep[0]|=((e>>4) & 0xFF);
 			doubleRep[1] = (byte) ( (e & 0x0F)<<4);

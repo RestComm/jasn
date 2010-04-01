@@ -184,8 +184,8 @@ public class AsnInputStreamTest extends TestCase {
 				0x00,
 				0x00
 		         };
-		
-		baIs = new ByteArrayInputStream(binary1);
+
+		baIs = new ByteArrayInputStream(binary2);
 		asnIs = new AsnInputStream(baIs);
 		tagValue = asnIs.readTag();
 		
@@ -194,7 +194,7 @@ public class AsnInputStreamTest extends TestCase {
 		//assertEquals(Tag.REAL, Tag.getType(tagValue));
 		d = asnIs.readReal();
 		assertEquals("Decoded value is not proper!!",-118.625d, d);
-	
+		
 	}
 
 }
