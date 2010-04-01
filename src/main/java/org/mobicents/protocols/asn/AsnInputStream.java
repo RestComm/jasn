@@ -18,7 +18,7 @@ public class AsnInputStream extends FilterInputStream {
 
 	private static final int DATA_BUCKET_SIZE = 1024;
 	
-	//tmp variables
+	// tmp variables
 	private static final int REAL_BB_SIGN_POSITIVE = 0x00;
 	private static final int REAL_BB_SIGN_NEGATIVE = 0x01;
 	private static final int REAL_BB_SIGN_MASK = 0x40;
@@ -47,9 +47,8 @@ public class AsnInputStream extends FilterInputStream {
 	 * <li><b>00</b> on the following octet</li>
 	 * <li><b>01</b> on the 2 following octets</li>
 	 * <li><b>10</b> on the 3 following octets</li>
-	 * <li><b>11</b> encoding of the length of the 2's-complement encoding of
-	 * exponent on the following octet, and 2's-complement encoding of exponent
-	 * on the other octets</li>
+	 * <li><b>11</b> encoding of the length of the 2's-complement encoding of exponent on the following octet, and
+	 * 2's-complement encoding of exponent on the other octets</li>
 	 * </ul>
 	 */
 	private static final int REAL_BB_EE_MASK = 0x3;
@@ -59,7 +58,7 @@ public class AsnInputStream extends FilterInputStream {
 	private static final int REAL_NR3 = 0x11;
 	
 	
-	//TODO : There should be getter / setter for these two?
+	// TODO : There should be getter / setter for these two?
 	private int tagClass =-1;
 	private int pCBit = -1;
 	
@@ -78,7 +77,7 @@ public class AsnInputStream extends FilterInputStream {
 	}
 
 	public int readTag() throws IOException {
-		//Tag tag = null;
+		// Tag tag = null;
 		byte b = (byte) this.read();
 
 		tagClass = (b & Tag.CLASS_MASK) >> 6;
@@ -99,7 +98,7 @@ public class AsnInputStream extends FilterInputStream {
 			} while (0 != (0x80 & temp));
 		}
 
-		//tag = new Tag(tagClass, (pCBit == 0 ? true : false), value);
+		// tag = new Tag(tagClass, (pCBit == 0 ? true : false), value);
 		return value;
 	}
 
@@ -139,6 +138,7 @@ public class AsnInputStream extends FilterInputStream {
 
 	/**
 	 * Reads and converts for {@link Tag#BOOLEAN} primitive
+	 * 
 	 * @return
 	 * @throws AsnException
 	 * @throws IOException
@@ -161,6 +161,7 @@ public class AsnInputStream extends FilterInputStream {
 	}
 	/**
 	 * Reads and converts for {@link Tag#INTEGER} primitive
+	 * 
 	 * @param length
 	 * @return
 	 * @throws AsnException
@@ -199,8 +200,7 @@ public class AsnInputStream extends FilterInputStream {
 	/**
 	 * Reads and converts for {@link Tag#REAL} primitive
 	 * 
-	 * @param base10
-	 *            -
+	 * @param base10 -
 	 *            <ul>
 	 *            <li><b>true</b> if real is encoded in base of 10 ( decimal )</li>
 	 *            <li><b>false</b> if real is encoded in base of 2 ( binary )</li>
@@ -210,19 +210,19 @@ public class AsnInputStream extends FilterInputStream {
 	 * @throws IOException
 	 */
 	public double readReal() throws AsnException, IOException {
-		//see: http://en.wikipedia.org/wiki/Single_precision_floating-point_format
-		//   : http://en.wikipedia.org/wiki/Double_precision_floating-point_format
+		// see: http://en.wikipedia.org/wiki/Single_precision_floating-point_format
+		// : http://en.wikipedia.org/wiki/Double_precision_floating-point_format
 		int length = readLength();
-		//universal part
+		// universal part
 		if(length == 0)
 		{
-			//yeah, nice
+			// yeah, nice
 			return 0.0;
 		}
 		
 		if(length == 1)
 		{
-			//+INF/-INF
+			// +INF/-INF
 			int b = this.read() & 0xFF;
 			if(b == 0x40)
 			{
@@ -236,31 +236,31 @@ public class AsnInputStream extends FilterInputStream {
 			}
 		}
 		int infoBits = this.read(); 
-		//substract on for info bits
+		// substract on for info bits
 		length--;
 		
-		//only binary has first bit of info set to 1;
+		// only binary has first bit of info set to 1;
 		boolean base10 = (((infoBits>>7) & 0x01) == 0x00);
-		//now the tricky part, this takes into account base10
+		// now the tricky part, this takes into account base10
 		if(base10)
 		{
-			//encoded as char string
+			// encoded as char string
 			ByteArrayOutputStream bos = new ByteArrayOutputStream(length);
 			this.readIA5String(length,true,bos);
-			//IA5 == ASCII...?
+			// IA5 == ASCII...?
 			String nrRep = new String(bos.toByteArray(),"US-ASCII");
-			//this will swallow NR(1-3) and give proper double :)
+			// this will swallow NR(1-3) and give proper double :)
 			return Double.parseDouble(nrRep);
 		}else
 		{
-			//encoded binary - mantisa and all that funny digits.
-			//the REAL type has been semantically equivalent to the
-			//type:
-			//[UNIVERSAL 9] IMPLICIT SEQUENCE {
-			//mantissa INTEGER (ALL EXCEPT 0),
-			//base INTEGER (2|10), 
-			//exponent INTEGER }
-			//sign x N x (2 ^ scale) x (base ^ E); --> base ^ E == 2 ^(E+x) == where x 
+			// encoded binary - mantisa and all that funny digits.
+			// the REAL type has been semantically equivalent to the
+			// type:
+			// [UNIVERSAL 9] IMPLICIT SEQUENCE {
+			// mantissa INTEGER (ALL EXCEPT 0),
+			// base INTEGER (2|10),
+			// exponent INTEGER }
+			// sign x N x (2 ^ scale) x (base ^ E); --> base ^ E == 2 ^(E+x) == where x
 			int tmp = 0;
 			
 			
@@ -275,7 +275,7 @@ public class AsnInputStream extends FilterInputStream {
 			{
 				e = this.read() & 0xFF;
 				length--;
-				//real representation
+				// real representation
 			}else if( tmp == 0x01)
 			{
 				e = (this.read() & 0xFF)<<8;
@@ -285,18 +285,18 @@ public class AsnInputStream extends FilterInputStream {
 				if(e>0x7FF)
 				{
 					
-					//to many bits... Double
+					// to many bits... Double
 					throw new AsnException("Exponent part has to many bits lit, allowed are 11, present: "+Long.toBinaryString(e));
 				}
-				//prepare E to become bits - this may cause loose of data, 
+				// prepare E to become bits - this may cause loose of data,
 				e &=0x7FF;
 			}else
 			{
-				//this is too big for java to handle.... we can have up to 11 bits..
+				// this is too big for java to handle.... we can have up to 11 bits..
 				throw new AsnException("Exponent part has to many bits lit, allowed are 11, but stream indicates 3 or more octets");
 			}
-			//now we may read up to 52bits
-			//7*8 == 56, we need up to 52
+			// now we may read up to 52bits
+			// 7*8 == 56, we need up to 52
 			if(length>7)
 			{
 				throw new AsnException("Length exceeds JAVA double mantisa size");
@@ -312,18 +312,18 @@ public class AsnInputStream extends FilterInputStream {
 				
 				n|=readV;
 			}
-			//check for possible overflow
+			// check for possible overflow
 			if(n>4503599627370495L)
 			{
 				throw new AsnException("Overflow on mantissa");
 			}
-			//we have real part, now lets add that scale; this is M x (2^F), which essentialy is bit shift :)
+			// we have real part, now lets add that scale; this is M x (2^F), which essentialy is bit shift :)
 			int shift = (int) Math.pow(2, s)-1; // -1 for 2, where we dont shift
 			n = n<< (shift); // this might be bad code.
 	
-			//now lets take care of different base, we are base2: base8 == base2^3,base16== base2^4
+			// now lets take care of different base, we are base2: base8 == base2^3,base16== base2^4
 			int base = (infoBits & REAL_BB_BASE_MASK) >> 4;
-			//is this correct?
+			// is this correct?
 			if(base == 0x01)
 			{
 				e= e*3; // (2^3)^e
@@ -331,21 +331,21 @@ public class AsnInputStream extends FilterInputStream {
 			{
 				e= e*4; // (2^4)^e
 			}
-			//do check again.
+			// do check again.
 			if(e>0x7FF)
 			{
-				//to many bits... Double
+				// to many bits... Double
 				throw new AsnException("Exponent part has to many bits lit, allowed are 11, present: "+Long.toBinaryString(e));
 			}
 			
-			//double is 8bytes
+			// double is 8bytes
 			byte[] doubleRep = new byte[8];
 			//set sign, no need to shift
 			doubleRep[0] = (byte) (signBit);
 			//now get first 7 bits of e;
 			doubleRep[0]|=((e>>4) & 0xFF);
 			doubleRep[1] = (byte) ( (e & 0x0F)<<4);
-			//from back its easier
+			// from back its easier
 			doubleRep[7] = (byte) n;
 			doubleRep[6] = (byte) (n>>8);
 			doubleRep[5] = (byte) (n>>16);
@@ -362,7 +362,7 @@ public class AsnInputStream extends FilterInputStream {
 		
 		
 	}
-	//FIXME: this should be "read string" or something, but lest leave it for now
+	// FIXME: this should be "read string" or something, but lest leave it for now
 	public void readIA5String(int length, boolean primitive, OutputStream outputStream)  throws AsnException,
 			IOException {
 		if (primitive) {
@@ -373,9 +373,70 @@ public class AsnInputStream extends FilterInputStream {
 			}
 		}
 	}
+	
+	private int getPadMask(int pad) throws AsnException{
+		switch(pad){
+		case 1:
+			return 0xFE;
+		case 2:
+			return 0xFC;
+		case 3:
+			return 0xF8;
+		case 4:
+			return 0xF0;
+		case 5:
+			return 0xE0;
+		case 6:
+			return 0xC0;
+		case 7 :
+			return 0x80;
+		default:
+			throw new AsnException("Pading asked for "+ pad);
+		}
+		
+	}
+	
+	public void readBitString(OutputStream outputStream, int tagValue) throws AsnException,
+	IOException {
+		
+		int length = this.readLength();
+		
+		if (this.pCBit == 0) {
+			int pad = this.read();
+			
+			// If pad is > 7 its not pad but actual value
+			if(pad > 7){
+				outputStream.write(pad);
+			}
+			
+			for(int count = 1; count < (length -1); count ++){
+				int dataByte = this.read();
+				outputStream.write(dataByte);
+			}
+			
+			int lastByte = this.read();
+			
+			if(pad < 8){
+				lastByte &= this.getPadMask(pad);
+			}
+			
+			outputStream.write(lastByte);
+			
+		} else {
+			if (length != 0x80) {
+				throw new AsnException("The length field of Constructed OctetString is not 0x80");
+			}
+			
+			while((tagValue = this.readTag()) != 0x0){
+				readBitString(outputStream, tagValue);
+			}
+		}
+		
+	}
 
 	/**
 	 * Reads and converts for {@link Tag#STRING_OCTET} primitive
+	 * 
 	 * @param length
 	 * @param primitive
 	 * @param outputStream
@@ -385,9 +446,10 @@ public class AsnInputStream extends FilterInputStream {
 	public void readOctetString(OutputStream outputStream, int tagValue) throws AsnException,
 	IOException {
 
-//		if(tagValue != Tag.STRING_OCTET){
-//			throw new AsnException("Tag doesn't represent Octet String. Tag Class "+ this.tagClass + " P/C falg "+ this.pCBit +" Tag Value "+tagValue);
-//		}		
+// if(tagValue != Tag.STRING_OCTET){
+// throw new AsnException("Tag doesn't represent Octet String. Tag Class "+ this.tagClass + " P/C falg "+ this.pCBit +"
+// Tag Value "+tagValue);
+// }
 		
 		int length = this.readLength();
 
@@ -415,8 +477,8 @@ public class AsnInputStream extends FilterInputStream {
 		if (length != 0)
 			throw new AsnException("Null length should be 0 but is " + length);
 		
-		//and thats it. Null has no V part. Its encoded as follows:
-		//T[0000 0101] L[0000 0000] V[]
+		// and thats it. Null has no V part. Its encoded as follows:
+		// T[0000 0101] L[0000 0000] V[]
 	}
 	
 	// private helper methods -------------------------------------------------

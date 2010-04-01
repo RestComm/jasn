@@ -87,6 +87,48 @@ public class AsnInputStreamTest extends TestCase {
 	}
 
 	@Test
+	public void testBitStringPrimitive() throws Exception {
+		byte[] data = new byte[] { 0x03, 0x04, 0x02, (byte) 0xF0, (byte) 0xF0, (byte) 0xF4 };
+
+		ByteArrayInputStream baIs = new ByteArrayInputStream(data);
+		AsnInputStream asnIs = new AsnInputStream(baIs);
+
+		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+
+		int tagValue = asnIs.readTag();
+		asnIs.readBitString(byteArrayOutputStream, tagValue);
+
+		byte[] resultData = byteArrayOutputStream.toByteArray();
+
+		for (int i = 0; i < resultData.length; i++) {
+			assertTrue(resultData[i] == data[i + 3]);
+		}
+
+	}
+
+	@Test
+	public void testBitStringConstructed() throws Exception {
+		byte[] data = new byte[] { 0x23, (byte) 0x80, 0x03, 0x02, (byte) 0xF0, (byte) 0xF0, 0x03, 0x02, 0x02, (byte)0xF4,
+				0x00 };
+
+		byte[] octetString = new byte[] { (byte) 0xF0, (byte) 0xF0, (byte)0xF4 };
+
+		ByteArrayInputStream baIs = new ByteArrayInputStream(data);
+		AsnInputStream asnIs = new AsnInputStream(baIs);
+
+		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+		// here we have to explicitly read the Tag
+		int tagValue = asnIs.readTag();
+		asnIs.readBitString(byteArrayOutputStream, tagValue);
+
+		byte[] resultData = byteArrayOutputStream.toByteArray();
+
+		for (int i = 0; i < resultData.length; i++) {
+			assertTrue(resultData[i] == octetString[i]);
+		}
+	}
+
+	@Test
 	public void testOctetStringPrimitive() throws Exception {
 		byte[] data = new byte[] { 0x4, 0x10, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, (byte) 0x88, (byte) 0x99,
 				(byte) 0xAA, (byte) 0xBB, (byte) 0XCC, (byte) 0xDD, (byte) 0xEE, (byte) 0xFF };
