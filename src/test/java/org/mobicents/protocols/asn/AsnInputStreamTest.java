@@ -294,4 +294,234 @@ public class AsnInputStreamTest extends TestCase {
 		
 		
 	}
+	
+	//IA5 data taken from table on page:   http://www.zytrax.com/tech/ia5.html
+	@Test
+	public void testIA5StringDefiniteShort() throws Exception
+	{
+		//ACEace$}
+		String dataString = "ACEace$}";
+		byte[] data = new byte[]
+		{
+				0x41,
+				0x43,
+				0x45,
+				0x61,
+				0x63,
+				0x65,
+				0x24,
+				0x7D
+				
+		};
+		ByteArrayOutputStream bos = new ByteArrayOutputStream(10);
+		//write tag
+		bos.write((Tag.CLASS_UNIVERSAL<<6)|(Tag.PC_PRIMITIVITE<<5) | Tag.STRING_IA5);
+		bos.write(data.length);
+		bos.write(data);
+		
+		ByteArrayInputStream baIs = new ByteArrayInputStream(bos.toByteArray());
+		AsnInputStream asnIs = new AsnInputStream(baIs);
+		int tagValue = asnIs.readTag();
+		
+		//assertEquals(Tag.CLASS_UNIVERSAL, Tag.getTagClass(tagValue));
+		//assertTrue(Tag.isPrimitive(tagValue);
+		//assertEquals(Tag.REAL, Tag.getType(tagValue));
+		String readData = asnIs.readIA5String();
+		assertEquals(dataString, readData);
+	}
+	
+	@Test
+	public void testIA5StringIndefinite_1() throws Exception
+	{
+		//ACEace$}
+		String dataString = "ACEace$}";
+		String resultString = dataString+dataString+dataString+dataString;
+		byte[] data = new byte[]
+		{
+				0x41,
+				0x43,
+				0x45,
+				0x61,
+				0x63,
+				0x65,
+				0x24,
+				0x7D
+				
+		};
+	
+		//we want 
+		// TL [TL[TLV TLV 0 0] TLV TLV 0 0]
+		
+		ByteArrayOutputStream bos = new ByteArrayOutputStream(10);
+		//write tag
+		bos.write((Tag.CLASS_UNIVERSAL<<6)|(Tag.PC_CONSTRUCTED<<5) | Tag.STRING_IA5);
+		bos.write(0x80); // idefinite length
+		bos.write((Tag.CLASS_UNIVERSAL<<6)|(Tag.PC_CONSTRUCTED<<5) | Tag.STRING_IA5);
+		bos.write(0x80); // idefinite length
+		
+		//now first two data
+		bos.write((Tag.CLASS_UNIVERSAL<<6)|(Tag.PC_PRIMITIVITE<<5) | Tag.STRING_IA5);
+		bos.write(data.length); // definite length
+		bos.write(data);
+		bos.write((Tag.CLASS_UNIVERSAL<<6)|(Tag.PC_PRIMITIVITE<<5) | Tag.STRING_IA5);
+		bos.write(data.length); // definite length
+		bos.write(data);
+		
+		//add null
+		bos.write(Tag.NULL_TAG);
+		bos.write(Tag.NULL_VALUE);
+		
+		
+		//add second set of data
+		bos.write((Tag.CLASS_UNIVERSAL<<6)|(Tag.PC_PRIMITIVITE<<5) | Tag.STRING_IA5);
+		bos.write(data.length); // definite length
+		bos.write(data);
+		bos.write((Tag.CLASS_UNIVERSAL<<6)|(Tag.PC_PRIMITIVITE<<5) | Tag.STRING_IA5);
+		bos.write(data.length); // definite length
+		bos.write(data);
+		
+		//add null
+		bos.write(Tag.NULL_TAG);
+		bos.write(Tag.NULL_VALUE);
+		
+		ByteArrayInputStream baIs = new ByteArrayInputStream(bos.toByteArray());
+		AsnInputStream asnIs = new AsnInputStream(baIs);
+		int tagValue = asnIs.readTag();
+		
+		//assertEquals(Tag.CLASS_UNIVERSAL, Tag.getTagClass(tagValue));
+		//assertTrue(Tag.isPrimitive(tagValue);
+		//assertEquals(Tag.REAL, Tag.getType(tagValue));
+		String readData = asnIs.readIA5String();
+		assertEquals(resultString, readData);
+	}
+	
+	public void testIA5StringIndefinite_2() throws Exception
+	{
+		//ACEace$}
+		String dataString = "ACEace$}";
+		String resultString = dataString+dataString+dataString+dataString;
+		byte[] data = new byte[]
+		{
+				0x41,
+				0x43,
+				0x45,
+				0x61,
+				0x63,
+				0x65,
+				0x24,
+				0x7D
+				
+		};
+	
+		//we want 
+		// TL [TLV TL[TLV TLV 0 0]  TLV 0 0]
+		
+		ByteArrayOutputStream bos = new ByteArrayOutputStream(10);
+		//write tag
+		bos.write((Tag.CLASS_UNIVERSAL<<6)|(Tag.PC_CONSTRUCTED<<5) | Tag.STRING_IA5);
+		bos.write(0x80); // idefinite length
+		//now first data
+		bos.write((Tag.CLASS_UNIVERSAL<<6)|(Tag.PC_PRIMITIVITE<<5) | Tag.STRING_IA5);
+		bos.write(data.length); // definite length
+		bos.write(data);
+		
+		//add middle complex
+		bos.write((Tag.CLASS_UNIVERSAL<<6)|(Tag.PC_CONSTRUCTED<<5) | Tag.STRING_IA5);
+		bos.write(0x80); // idefinite length
+		bos.write((Tag.CLASS_UNIVERSAL<<6)|(Tag.PC_PRIMITIVITE<<5) | Tag.STRING_IA5);
+		bos.write(data.length); // definite length
+		bos.write(data);
+		bos.write((Tag.CLASS_UNIVERSAL<<6)|(Tag.PC_PRIMITIVITE<<5) | Tag.STRING_IA5);
+		bos.write(data.length); // definite length
+		bos.write(data);
+		//add null
+		bos.write(Tag.NULL_TAG);
+		bos.write(Tag.NULL_VALUE);
+		
+		
+		//add second set of data
+		bos.write((Tag.CLASS_UNIVERSAL<<6)|(Tag.PC_PRIMITIVITE<<5) | Tag.STRING_IA5);
+		bos.write(data.length); // definite length
+		bos.write(data);		
+		//add null
+		bos.write(Tag.NULL_TAG);
+		bos.write(Tag.NULL_VALUE);
+		
+		ByteArrayInputStream baIs = new ByteArrayInputStream(bos.toByteArray());
+		AsnInputStream asnIs = new AsnInputStream(baIs);
+		int tagValue = asnIs.readTag();
+		
+		//assertEquals(Tag.CLASS_UNIVERSAL, Tag.getTagClass(tagValue));
+		//assertTrue(Tag.isPrimitive(tagValue);
+		//assertEquals(Tag.REAL, Tag.getType(tagValue));
+		String readData = asnIs.readIA5String();
+		assertEquals(resultString, readData);
+	}
+	
+	@Test
+	public void testIA5StringIndefinite_3() throws Exception
+	{
+		//ACEace$}
+		String dataString = "ACEace$}";
+		String resultString = dataString+dataString+dataString+dataString;
+		byte[] data = new byte[]
+		{
+				0x41,
+				0x43,
+				0x45,
+				0x61,
+				0x63,
+				0x65,
+				0x24,
+				0x7D
+				
+		};
+	
+		//we want 
+		// TL [TLV TLV TL[TLV TLV 0 0] 0 0]
+		
+		ByteArrayOutputStream bos = new ByteArrayOutputStream(10);
+		//write tag
+		bos.write((Tag.CLASS_UNIVERSAL<<6)|(Tag.PC_CONSTRUCTED<<5) | Tag.STRING_IA5);
+		bos.write(0x80); // idefinite length
+		bos.write((Tag.CLASS_UNIVERSAL<<6)|(Tag.PC_CONSTRUCTED<<5) | Tag.STRING_IA5);
+		bos.write(0x80); // idefinite length
+		
+		
+		
+		
+		//now first two data
+		bos.write((Tag.CLASS_UNIVERSAL<<6)|(Tag.PC_PRIMITIVITE<<5) | Tag.STRING_IA5);
+		bos.write(data.length); // definite length
+		bos.write(data);
+		bos.write((Tag.CLASS_UNIVERSAL<<6)|(Tag.PC_PRIMITIVITE<<5) | Tag.STRING_IA5);
+		bos.write(data.length); // definite length
+		bos.write(data);
+		
+		//add second set of data
+		bos.write((Tag.CLASS_UNIVERSAL<<6)|(Tag.PC_PRIMITIVITE<<5) | Tag.STRING_IA5);
+		bos.write(data.length); // definite length
+		bos.write(data);
+		bos.write((Tag.CLASS_UNIVERSAL<<6)|(Tag.PC_PRIMITIVITE<<5) | Tag.STRING_IA5);
+		bos.write(data.length); // definite length
+		bos.write(data);
+		//add null
+		bos.write(Tag.NULL_TAG);
+		bos.write(Tag.NULL_VALUE);
+		
+		//add null
+		bos.write(Tag.NULL_TAG);
+		bos.write(Tag.NULL_VALUE);
+		
+		ByteArrayInputStream baIs = new ByteArrayInputStream(bos.toByteArray());
+		AsnInputStream asnIs = new AsnInputStream(baIs);
+		int tagValue = asnIs.readTag();
+		
+		//assertEquals(Tag.CLASS_UNIVERSAL, Tag.getTagClass(tagValue));
+		//assertTrue(Tag.isPrimitive(tagValue);
+		//assertEquals(Tag.REAL, Tag.getType(tagValue));
+		String readData = asnIs.readIA5String();
+		assertEquals(resultString, readData);
+	}
+	
 }
