@@ -59,6 +59,10 @@ public class AsnInputStream extends FilterInputStream {
 	private static final int REAL_NR3 = 0x11;
 	
 	
+	//TODO : There should be getter / setter for these two?
+	private int tagClass =-1;
+	private int pCBit = -1;
+	
 	
 	public AsnInputStream(InputStream in) {
 		super(in);
@@ -68,17 +72,17 @@ public class AsnInputStream extends FilterInputStream {
 	public int read() throws IOException {
 		int i = super.read();
 		if (i == -1) {
-			throw new EOFException("input stream has reached the end");
+			throw new EOFException("AsnInputStream has reached the end");
 		}
 		return i;
 	}
 
-	public Tag readTag() throws IOException {
-		Tag tag = null;
+	public int readTag() throws IOException {
+		//Tag tag = null;
 		byte b = (byte) this.read();
 
-		int tagClass = b & Tag.CLASS_MASK;
-		int pCBit = b & Tag.PC_MASK;
+		tagClass = (b & Tag.CLASS_MASK) >> 6;
+		pCBit = (b & Tag.PC_MASK) >> 5;
 
 		int value = b & Tag.NUMBER_MASK;
 
@@ -95,8 +99,8 @@ public class AsnInputStream extends FilterInputStream {
 			} while (0 != (0x80 & temp));
 		}
 
-		tag = new Tag(tagClass, (pCBit == 0 ? true : false), value);
-		return tag;
+		//tag = new Tag(tagClass, (pCBit == 0 ? true : false), value);
+		return value;
 	}
 
 	public int readLength() throws IOException {
@@ -118,7 +122,7 @@ public class AsnInputStream extends FilterInputStream {
 		// set to 1, as for the long form, but the value N is set to zero.
 		b = (byte) (b & 0x7F);
 		if (b == 0) {
-			return length;
+			return 0x80;
 		}
 
 		// If bit 8 of the first length octet is set to 1, then we have the long form of length. In long form, the first
@@ -140,6 +144,11 @@ public class AsnInputStream extends FilterInputStream {
 	 * @throws IOException
 	 */
 	public boolean readBoolean() throws AsnException, IOException {
+		int tagValue = this.readTag();
+		
+		if(tagValue != Tag.BOOLEAN){
+			throw new AsnException("Tag doesn't represent Boolean. Tag Class "+ this.tagClass + " P/C falg "+ this.pCBit +" Tag Value "+tagValue);
+		}
 		byte temp;
 
 		int length = readLength();
@@ -157,17 +166,27 @@ public class AsnInputStream extends FilterInputStream {
 	 * @throws AsnException
 	 * @throws IOException
 	 */
-	public long readInteger(int length) throws AsnException, IOException {
+	public long readInteger() throws AsnException, IOException {
+		
+		int tagValue = this.readTag();
+		
+		if(tagValue != Tag.INTEGER){
+			throw new AsnException("Tag doesn't represent Integer. Tag Class "+ this.tagClass + " P/C falg "+ this.pCBit +" Tag Value "+tagValue);
+		}		
+		
 		long value = 0;
 		byte temp;
 
+		int length = this.readLength();
+		
 		if (length == -1)
 			throw new AsnException("Length for Integer is -1");
+		
 		if (length == 0)
 			return value;
 
 		temp = (byte) this.read();
-		value = temp; // sign extended
+		value = temp; 
 
 		for (int i = 0; i < length - 1; i++) {
 			temp = (byte) this.read();
@@ -363,22 +382,35 @@ public class AsnInputStream extends FilterInputStream {
 	 * @throws AsnException
 	 * @throws IOException
 	 */
-	public void readOctetString(int length, boolean primitive, OutputStream outputStream) throws AsnException,
-			IOException {
-		if (primitive) {
+	public void readOctetString(OutputStream outputStream, int tagValue) throws AsnException,
+	IOException {
+
+//		if(tagValue != Tag.STRING_OCTET){
+//			throw new AsnException("Tag doesn't represent Octet String. Tag Class "+ this.tagClass + " P/C falg "+ this.pCBit +" Tag Value "+tagValue);
+//		}		
+		
+		int length = this.readLength();
+
+		if (this.pCBit == 0) {
 			this.fillOutputStream(outputStream, length);
 		} else {
 			if (length != 0x80) {
 				throw new AsnException("The length field of Constructed OctetString is not 0x80");
 			}
+			
+			while((tagValue = this.readTag()) != 0x0){
+				readOctetString(outputStream, tagValue);
+			}
 		}
-	}
+}
 	/**
 	 * Read and converts(actually does not since its null) for {@link Tag#NULL} primitive
 	 */
 	public void readNull() throws AsnException,
 	IOException
 	{
+		int tagValue = this.readTag();
+		
 		int length = readLength();
 		if (length != 0)
 			throw new AsnException("Null length should be 0 but is " + length);

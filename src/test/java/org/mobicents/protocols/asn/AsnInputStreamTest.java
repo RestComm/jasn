@@ -43,14 +43,7 @@ public class AsnInputStreamTest extends TestCase {
 		ByteArrayInputStream baIs = new ByteArrayInputStream(data);
 		AsnInputStream asnIs = new AsnInputStream(baIs);
 
-		Tag tag = asnIs.readTag();
-		assertNotNull(tag);
-		assertEquals(Tag.CLASS_UNIVERSAL, tag.getTagClass());
-		assertEquals(true, tag.isPrimitive);
-		assertEquals(Tag.INTEGER, tag.getValue());
-
-		int length = asnIs.readLength();
-		long value = asnIs.readInteger(length);
+		long value = asnIs.readInteger();
 
 		assertEquals(-128, value);
 
@@ -62,15 +55,7 @@ public class AsnInputStreamTest extends TestCase {
 		baIs = new ByteArrayInputStream(data);
 		asnIs = new AsnInputStream(baIs);
 
-		tag = asnIs.readTag();
-		assertNotNull(tag);
-		assertEquals(Tag.CLASS_UNIVERSAL, tag.getTagClass());
-		assertEquals(true, tag.isPrimitive);
-		assertEquals(Tag.INTEGER, tag.getValue());
-
-		length = asnIs.readLength();
-		assertEquals(4, length);
-		value = asnIs.readInteger(length);
+		value = asnIs.readInteger();
 
 		assertEquals(-65536, value);
 
@@ -82,15 +67,7 @@ public class AsnInputStreamTest extends TestCase {
 		baIs = new ByteArrayInputStream(data);
 		asnIs = new AsnInputStream(baIs);
 
-		tag = asnIs.readTag();
-		assertNotNull(tag);
-		assertEquals(Tag.CLASS_UNIVERSAL, tag.getTagClass());
-		assertEquals(true, tag.isPrimitive);
-		assertEquals(Tag.INTEGER, tag.getValue());
-
-		length = asnIs.readLength();
-		assertEquals(4, length);
-		value = asnIs.readInteger(length);
+		value = asnIs.readInteger();
 
 		assertEquals(797979, value);
 
@@ -117,17 +94,10 @@ public class AsnInputStreamTest extends TestCase {
 		ByteArrayInputStream baIs = new ByteArrayInputStream(data);
 		AsnInputStream asnIs = new AsnInputStream(baIs);
 
-		Tag tag = asnIs.readTag();
-		assertNotNull(tag);
-		assertEquals(Tag.CLASS_UNIVERSAL, tag.getTagClass());
-		assertEquals(true, tag.isPrimitive);
-		assertEquals(Tag.STRING_OCTET, tag.getValue());
-
-		int length = asnIs.readLength();
-
-		assertEquals(16, length);
 		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-		asnIs.readOctetString(length, tag.isPrimitive, byteArrayOutputStream);
+		// here we have to explicitly read the Tag
+		int tagValue = asnIs.readTag();
+		asnIs.readOctetString(byteArrayOutputStream, tagValue);
 
 		byte[] resultData = byteArrayOutputStream.toByteArray();
 
@@ -135,46 +105,58 @@ public class AsnInputStreamTest extends TestCase {
 			assertTrue(resultData[i] == data[i + 2]);
 		}
 	}
-	//those two are completly made up, couldnt find trace
+
 	@Test
-	public void testRealBinary() throws Exception
-	{
-		
-		//118.625
-		byte[] binary1 = new byte[]
-		        {
-				//TAG;
-				(Tag.CLASS_UNIVERSAL<<6)|(Tag.PC_PRIMITIVITE<<5) | Tag.REAL,
-				//Length - this is definite - we dont handle more? do we?
-				0x0A,//1(info bits) 2(exponent 7(mantisa)
-				 //info bits  (binary,sign,BB,FF,EE)
-				(byte)(0x80 | (0x0<<6) | 0x00 <<4 | 0x01)  , //1 0 00(base2) 00(scale = 0) 01 ( two octets for exponent
-				//exponent, two octets
-				//100 00000101
-				0x04,
-				0x05,
-				//mantisa
-				//1101  10101000  00000000  00000000  00000000  00000000  00000000
-		
-				0x0D,
-				(byte)0xA8,
-				0x00,
-				0x00,
-				0x00,
-				0x00,
-				0x00
-		         };
-		
+	public void testOctetStringConstructed() throws Exception {
+		byte[] data = new byte[] { 0x24, (byte) 0x80, 0x04, 0x08, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x04,
+				0x08, (byte) 0x88, (byte) 0x99, (byte) 0xAA, (byte) 0xBB, (byte) 0XCC, (byte) 0xDD, (byte) 0xEE,
+				(byte) 0xFF, 0x00 };
+
+		byte[] octetString = new byte[] { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, (byte) 0x88, (byte) 0x99,
+				(byte) 0xAA, (byte) 0xBB, (byte) 0XCC, (byte) 0xDD, (byte) 0xEE, (byte) 0xFF };
+
+		ByteArrayInputStream baIs = new ByteArrayInputStream(data);
+		AsnInputStream asnIs = new AsnInputStream(baIs);
+
+		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+		// here we have to explicitly read the Tag
+		int tagValue = asnIs.readTag();
+		asnIs.readOctetString(byteArrayOutputStream, tagValue);
+
+		byte[] resultData = byteArrayOutputStream.toByteArray();
+
+		for (int i = 0; i < resultData.length; i++) {
+			assertTrue(resultData[i] == octetString[i]);
+		}
+	}
+
+	// those two are completly made up, couldnt find trace
+	@Test
+	public void testRealBinary() throws Exception {
+
+		// 118.625
+		byte[] binary1 = new byte[] {
+		// TAG;
+				(Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5) | Tag.REAL,
+				// Length - this is definite - we dont handle more? do we?
+				0x0A,// 1(info bits) 2(exponent 7(mantisa)
+				// info bits (binary,sign,BB,FF,EE)
+				(byte) (0x80 | (0x0 << 6) | 0x00 << 4 | 0x01), // 1 0 00(base2) 00(scale = 0) 01 ( two octets for
+				// exponent
+				// exponent, two octets
+				// 100 00000101
+				0x04, 0x05,
+				// mantisa
+				// 1101 10101000 00000000 00000000 00000000 00000000 00000000
+
+				0x0D, (byte) 0xA8, 0x00, 0x00, 0x00, 0x00, 0x00 };
+
 		ByteArrayInputStream baIs = new ByteArrayInputStream(binary1);
 		AsnInputStream asnIs = new AsnInputStream(baIs);
-		Tag tag = asnIs.readTag();
-		assertNotNull(tag);
-		assertEquals(Tag.CLASS_UNIVERSAL, tag.getTagClass());
-		assertEquals(true, tag.isPrimitive);
-		assertEquals(Tag.REAL, tag.getValue());
+
 		double d = asnIs.readReal();
-		assertEquals("Decoded value is not proper!!",118.625d, d);
-	
+		assertEquals("Decoded value is not proper!!", 118.625d, d);
+
 	}
 
 }
