@@ -523,5 +523,189 @@ public class AsnInputStreamTest extends TestCase {
 		String readData = asnIs.readIA5String();
 		assertEquals(resultString, readData);
 	}
+	@Test
+	public void testUTF8StringDefiniteShort() throws Exception
+	{
+		//ACEace$}
+		String dataString = "ACEace$} - S³u¿by wiedz¹, kto zorganizowa³ zamachy w metrze.";
+		byte[] data = dataString.getBytes(BERStatics.STRING_UTF8_ENCODING);
+		ByteArrayOutputStream bos = new ByteArrayOutputStream(10);
+		//write tag
+		bos.write((Tag.CLASS_UNIVERSAL<<6)|(Tag.PC_PRIMITIVITE<<5) | Tag.STRING_UTF8);
+		bos.write(data.length);
+		bos.write(data);
+		
+		ByteArrayInputStream baIs = new ByteArrayInputStream(bos.toByteArray());
+		AsnInputStream asnIs = new AsnInputStream(baIs);
+		int tagValue = asnIs.readTag();
+		
+		//assertEquals(Tag.CLASS_UNIVERSAL, Tag.getTagClass(tagValue));
+		//assertTrue(Tag.isPrimitive(tagValue);
+		//assertEquals(Tag.REAL, Tag.getType(tagValue));
+		String readData = asnIs.readUTF8String();
+		assertEquals(dataString, readData);
+	}
+	
+	@Test
+	public void testUTF8StringIndefinite_1() throws Exception
+	{
+		//ACEace$}
+		String dataString = "ACEace$} - S³u¿by wiedz¹, kto zorganizowa³ zamachy w metrze.";
+		String resultString = dataString+dataString+dataString+dataString;
+		byte[] data = resultString.getBytes(BERStatics.STRING_UTF8_ENCODING);
+	
+		//we want 
+		// TL [TL[TLV TLV 0 0] TLV TLV 0 0]
+		
+		ByteArrayOutputStream bos = new ByteArrayOutputStream(10);
+		//write tag
+		bos.write((Tag.CLASS_UNIVERSAL<<6)|(Tag.PC_CONSTRUCTED<<5) | Tag.STRING_UTF8);
+		bos.write(0x80); // idefinite length
+		bos.write((Tag.CLASS_UNIVERSAL<<6)|(Tag.PC_CONSTRUCTED<<5) | Tag.STRING_UTF8);
+		bos.write(0x80); // idefinite length
+		
+		//now first two data
+		bos.write((Tag.CLASS_UNIVERSAL<<6)|(Tag.PC_PRIMITIVITE<<5) | Tag.STRING_UTF8);
+		bos.write(data.length); // definite length
+		bos.write(data);
+		bos.write((Tag.CLASS_UNIVERSAL<<6)|(Tag.PC_PRIMITIVITE<<5) | Tag.STRING_UTF8);
+		bos.write(data.length); // definite length
+		bos.write(data);
+		
+		//add null
+		bos.write(Tag.NULL_TAG);
+		bos.write(Tag.NULL_VALUE);
+		
+		
+		//add second set of data
+		bos.write((Tag.CLASS_UNIVERSAL<<6)|(Tag.PC_PRIMITIVITE<<5) | Tag.STRING_UTF8);
+		bos.write(data.length); // definite length
+		bos.write(data);
+		bos.write((Tag.CLASS_UNIVERSAL<<6)|(Tag.PC_PRIMITIVITE<<5) | Tag.STRING_UTF8);
+		bos.write(data.length); // definite length
+		bos.write(data);
+		
+		//add null
+		bos.write(Tag.NULL_TAG);
+		bos.write(Tag.NULL_VALUE);
+		
+		ByteArrayInputStream baIs = new ByteArrayInputStream(bos.toByteArray());
+		AsnInputStream asnIs = new AsnInputStream(baIs);
+		int tagValue = asnIs.readTag();
+		
+		//assertEquals(Tag.CLASS_UNIVERSAL, Tag.getTagClass(tagValue));
+		//assertTrue(Tag.isPrimitive(tagValue);
+		//assertEquals(Tag.REAL, Tag.getType(tagValue));
+		String readData = asnIs.readUTF8String();
+		assertEquals(resultString, readData);
+	}
+	
+	@Test
+	public void testUTF8StringIndefinite_2() throws Exception
+	{
+		//ACEace$}
+		String dataString = "ACEace$} - S³u¿by wiedz¹, kto zorganizowa³ zamachy w metrze.";
+		String resultString = dataString+dataString+dataString+dataString;
+		byte[] data = resultString.getBytes(BERStatics.STRING_UTF8_ENCODING);
+	
+		//we want 
+		// TL [TLV TL[TLV TLV 0 0]  TLV 0 0]
+		
+		ByteArrayOutputStream bos = new ByteArrayOutputStream(10);
+		//write tag
+		bos.write((Tag.CLASS_UNIVERSAL<<6)|(Tag.PC_CONSTRUCTED<<5) | Tag.STRING_UTF8);
+		bos.write(0x80); // idefinite length
+		//now first data
+		bos.write((Tag.CLASS_UNIVERSAL<<6)|(Tag.PC_PRIMITIVITE<<5) | Tag.STRING_UTF8);
+		bos.write(data.length); // definite length
+		bos.write(data);
+		
+		//add middle complex
+		bos.write((Tag.CLASS_UNIVERSAL<<6)|(Tag.PC_CONSTRUCTED<<5) | Tag.STRING_UTF8);
+		bos.write(0x80); // idefinite length
+		bos.write((Tag.CLASS_UNIVERSAL<<6)|(Tag.PC_PRIMITIVITE<<5) | Tag.STRING_UTF8);
+		bos.write(data.length); // definite length
+		bos.write(data);
+		bos.write((Tag.CLASS_UNIVERSAL<<6)|(Tag.PC_PRIMITIVITE<<5) | Tag.STRING_UTF8);
+		bos.write(data.length); // definite length
+		bos.write(data);
+		//add null
+		bos.write(Tag.NULL_TAG);
+		bos.write(Tag.NULL_VALUE);
+		
+		
+		//add second set of data
+		bos.write((Tag.CLASS_UNIVERSAL<<6)|(Tag.PC_PRIMITIVITE<<5) | Tag.STRING_UTF8);
+		bos.write(data.length); // definite length
+		bos.write(data);		
+		//add null
+		bos.write(Tag.NULL_TAG);
+		bos.write(Tag.NULL_VALUE);
+		
+		ByteArrayInputStream baIs = new ByteArrayInputStream(bos.toByteArray());
+		AsnInputStream asnIs = new AsnInputStream(baIs);
+		int tagValue = asnIs.readTag();
+		
+		//assertEquals(Tag.CLASS_UNIVERSAL, Tag.getTagClass(tagValue));
+		//assertTrue(Tag.isPrimitive(tagValue);
+		//assertEquals(Tag.REAL, Tag.getType(tagValue));
+		String readData = asnIs.readUTF8String();
+		assertEquals(resultString, readData);
+	}
+	
+	@Test
+	public void testUTF8StringIndefinite_3() throws Exception
+	{
+		//ACEace$}
+		String dataString = "ACEace$} - S³u¿by wiedz¹, kto zorganizowa³ zamachy w metrze.";
+		String resultString = dataString+dataString+dataString+dataString;
+		byte[] data = resultString.getBytes(BERStatics.STRING_UTF8_ENCODING);
+	
+		//we want 
+		// TL [TLV TLV TL[TLV TLV 0 0] 0 0]
+		
+		ByteArrayOutputStream bos = new ByteArrayOutputStream(10);
+		//write tag
+		bos.write((Tag.CLASS_UNIVERSAL<<6)|(Tag.PC_CONSTRUCTED<<5) | Tag.STRING_UTF8);
+		bos.write(0x80); // idefinite length
+		bos.write((Tag.CLASS_UNIVERSAL<<6)|(Tag.PC_CONSTRUCTED<<5) | Tag.STRING_UTF8);
+		bos.write(0x80); // idefinite length
+		
+		
+		
+		
+		//now first two data
+		bos.write((Tag.CLASS_UNIVERSAL<<6)|(Tag.PC_PRIMITIVITE<<5) | Tag.STRING_UTF8);
+		bos.write(data.length); // definite length
+		bos.write(data);
+		bos.write((Tag.CLASS_UNIVERSAL<<6)|(Tag.PC_PRIMITIVITE<<5) | Tag.STRING_UTF8);
+		bos.write(data.length); // definite length
+		bos.write(data);
+		
+		//add second set of data
+		bos.write((Tag.CLASS_UNIVERSAL<<6)|(Tag.PC_PRIMITIVITE<<5) | Tag.STRING_UTF8);
+		bos.write(data.length); // definite length
+		bos.write(data);
+		bos.write((Tag.CLASS_UNIVERSAL<<6)|(Tag.PC_PRIMITIVITE<<5) | Tag.STRING_UTF8);
+		bos.write(data.length); // definite length
+		bos.write(data);
+		//add null
+		bos.write(Tag.NULL_TAG);
+		bos.write(Tag.NULL_VALUE);
+		
+		//add null
+		bos.write(Tag.NULL_TAG);
+		bos.write(Tag.NULL_VALUE);
+		
+		ByteArrayInputStream baIs = new ByteArrayInputStream(bos.toByteArray());
+		AsnInputStream asnIs = new AsnInputStream(baIs);
+		int tagValue = asnIs.readTag();
+		
+		//assertEquals(Tag.CLASS_UNIVERSAL, Tag.getTagClass(tagValue));
+		//assertTrue(Tag.isPrimitive(tagValue);
+		//assertEquals(Tag.REAL, Tag.getType(tagValue));
+		String readData = asnIs.readUTF8String();
+		assertEquals(resultString, readData);
+	}
 	
 }

@@ -316,7 +316,7 @@ public class AsnInputStream extends FilterInputStream {
 		
 	}
 	
-	public String readIUTF8String() throws AsnException, IOException
+	public String readUTF8String() throws AsnException, IOException
 	{
 		return readString(BERStatics.STRING_UTF8_ENCODING,Tag.STRING_UTF8);	
 		

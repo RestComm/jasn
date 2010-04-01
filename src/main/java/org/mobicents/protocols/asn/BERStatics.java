@@ -51,6 +51,6 @@ public interface BERStatics {
 	public static final int REAL_NR3 = 0x11;
 	
 	public static final String STRING_IA5_ENCODING = "US-ASCII";
-	public static final String STRING_UTF8_ENCODING = "US-ASCII";
+	public static final String STRING_UTF8_ENCODING = "UTF-8";
 	
 }
