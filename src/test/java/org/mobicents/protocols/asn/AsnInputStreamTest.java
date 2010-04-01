@@ -280,7 +280,7 @@ public class AsnInputStreamTest extends TestCase {
 			}
 			bos.write( ((0x00<<6))| (NR));
 			bos.write(data);
-			ByteArrayInputStream baIs = new ByteArrayInputStream(bos.toByteArray());
+			byte[] bb = bos.toByteArray(); ByteArrayInputStream baIs = new ByteArrayInputStream(bb);
 			AsnInputStream asnIs = new AsnInputStream(baIs);
 			int tagValue = asnIs.readTag();
 			
@@ -319,7 +319,7 @@ public class AsnInputStreamTest extends TestCase {
 		bos.write(data.length);
 		bos.write(data);
 		
-		ByteArrayInputStream baIs = new ByteArrayInputStream(bos.toByteArray());
+		byte[] bb = bos.toByteArray(); ByteArrayInputStream baIs = new ByteArrayInputStream(bb);
 		AsnInputStream asnIs = new AsnInputStream(baIs);
 		int tagValue = asnIs.readTag();
 		
@@ -384,7 +384,7 @@ public class AsnInputStreamTest extends TestCase {
 		bos.write(Tag.NULL_TAG);
 		bos.write(Tag.NULL_VALUE);
 		
-		ByteArrayInputStream baIs = new ByteArrayInputStream(bos.toByteArray());
+		byte[] bb = bos.toByteArray(); ByteArrayInputStream baIs = new ByteArrayInputStream(bb);
 		AsnInputStream asnIs = new AsnInputStream(baIs);
 		int tagValue = asnIs.readTag();
 		
@@ -447,7 +447,7 @@ public class AsnInputStreamTest extends TestCase {
 		bos.write(Tag.NULL_TAG);
 		bos.write(Tag.NULL_VALUE);
 		
-		ByteArrayInputStream baIs = new ByteArrayInputStream(bos.toByteArray());
+		byte[] bb = bos.toByteArray(); ByteArrayInputStream baIs = new ByteArrayInputStream(bb);
 		AsnInputStream asnIs = new AsnInputStream(baIs);
 		int tagValue = asnIs.readTag();
 		
@@ -513,7 +513,7 @@ public class AsnInputStreamTest extends TestCase {
 		bos.write(Tag.NULL_TAG);
 		bos.write(Tag.NULL_VALUE);
 		
-		ByteArrayInputStream baIs = new ByteArrayInputStream(bos.toByteArray());
+		byte[] bb = bos.toByteArray(); ByteArrayInputStream baIs = new ByteArrayInputStream(bb);
 		AsnInputStream asnIs = new AsnInputStream(baIs);
 		int tagValue = asnIs.readTag();
 		
@@ -535,7 +535,7 @@ public class AsnInputStreamTest extends TestCase {
 		bos.write(data.length);
 		bos.write(data);
 		
-		ByteArrayInputStream baIs = new ByteArrayInputStream(bos.toByteArray());
+		byte[] bb = bos.toByteArray(); ByteArrayInputStream baIs = new ByteArrayInputStream(bb);
 		AsnInputStream asnIs = new AsnInputStream(baIs);
 		int tagValue = asnIs.readTag();
 		
@@ -550,9 +550,9 @@ public class AsnInputStreamTest extends TestCase {
 	public void testUTF8StringIndefinite_1() throws Exception
 	{
 		//ACEace$}
-		String dataString = "ACEace$} - S³u¿by wiedz¹, kto zorganizowa³ zamachy w metrze.";
+		String dataString = "ACEace$} S³u¿by wiedz¹.";
 		String resultString = dataString+dataString+dataString+dataString;
-		byte[] data = resultString.getBytes(BERStatics.STRING_UTF8_ENCODING);
+		byte[] data = dataString.getBytes(BERStatics.STRING_UTF8_ENCODING);
 	
 		//we want 
 		// TL [TL[TLV TLV 0 0] TLV TLV 0 0]
@@ -589,7 +589,7 @@ public class AsnInputStreamTest extends TestCase {
 		bos.write(Tag.NULL_TAG);
 		bos.write(Tag.NULL_VALUE);
 		
-		ByteArrayInputStream baIs = new ByteArrayInputStream(bos.toByteArray());
+		byte[] bb = bos.toByteArray(); ByteArrayInputStream baIs = new ByteArrayInputStream(bb);
 		AsnInputStream asnIs = new AsnInputStream(baIs);
 		int tagValue = asnIs.readTag();
 		
@@ -604,9 +604,9 @@ public class AsnInputStreamTest extends TestCase {
 	public void testUTF8StringIndefinite_2() throws Exception
 	{
 		//ACEace$}
-		String dataString = "ACEace$} - S³u¿by wiedz¹, kto zorganizowa³ zamachy w metrze.";
+		String dataString = "ACEace$} S³u¿by wiedz¹.";
 		String resultString = dataString+dataString+dataString+dataString;
-		byte[] data = resultString.getBytes(BERStatics.STRING_UTF8_ENCODING);
+		byte[] data = dataString.getBytes(BERStatics.STRING_UTF8_ENCODING);
 	
 		//we want 
 		// TL [TLV TL[TLV TLV 0 0]  TLV 0 0]
@@ -642,7 +642,7 @@ public class AsnInputStreamTest extends TestCase {
 		bos.write(Tag.NULL_TAG);
 		bos.write(Tag.NULL_VALUE);
 		
-		ByteArrayInputStream baIs = new ByteArrayInputStream(bos.toByteArray());
+		byte[] bb = bos.toByteArray(); ByteArrayInputStream baIs = new ByteArrayInputStream(bb);
 		AsnInputStream asnIs = new AsnInputStream(baIs);
 		int tagValue = asnIs.readTag();
 		
@@ -657,9 +657,9 @@ public class AsnInputStreamTest extends TestCase {
 	public void testUTF8StringIndefinite_3() throws Exception
 	{
 		//ACEace$}
-		String dataString = "ACEace$} - S³u¿by wiedz¹, kto zorganizowa³ zamachy w metrze.";
+		String dataString = "ACEace$} S³u¿by wiedz¹.";
 		String resultString = dataString+dataString+dataString+dataString;
-		byte[] data = resultString.getBytes(BERStatics.STRING_UTF8_ENCODING);
+		byte[] data = dataString.getBytes(BERStatics.STRING_UTF8_ENCODING);
 	
 		//we want 
 		// TL [TLV TLV TL[TLV TLV 0 0] 0 0]
@@ -697,7 +697,7 @@ public class AsnInputStreamTest extends TestCase {
 		bos.write(Tag.NULL_TAG);
 		bos.write(Tag.NULL_VALUE);
 		
-		ByteArrayInputStream baIs = new ByteArrayInputStream(bos.toByteArray());
+		byte[] bb = bos.toByteArray(); ByteArrayInputStream baIs = new ByteArrayInputStream(bb);
 		AsnInputStream asnIs = new AsnInputStream(baIs);
 		int tagValue = asnIs.readTag();
 		
