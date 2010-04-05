@@ -2,6 +2,7 @@ package org.mobicents.protocols.asn;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.util.BitSet;
 
 import junit.framework.TestCase;
 
@@ -93,16 +94,42 @@ public class AsnInputStreamTest extends TestCase {
 		ByteArrayInputStream baIs = new ByteArrayInputStream(data);
 		AsnInputStream asnIs = new AsnInputStream(baIs);
 
-		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-
+		BitSet bitSet = new BitSet();
+		
 		int tagValue = asnIs.readTag();
-		asnIs.readBitString(byteArrayOutputStream);
-
-		byte[] resultData = byteArrayOutputStream.toByteArray();
-
-		for (int i = 0; i < resultData.length; i++) {
-			assertTrue(resultData[i] == data[i + 3]);
-		}
+		asnIs.readBitString(bitSet, 0);
+		
+		//f0f0f4 is 111100001111000011110100 reduce 02 bits so total length is 22
+		assertEquals(22, bitSet.length());
+		assertTrue(bitSet.get(0));
+		assertTrue(bitSet.get(1));
+		assertTrue(bitSet.get(2));
+		assertTrue(bitSet.get(3));
+		
+		assertFalse(bitSet.get(4));
+		assertFalse(bitSet.get(5));
+		assertFalse(bitSet.get(6));
+		assertFalse(bitSet.get(7));
+		
+		assertTrue(bitSet.get(8));
+		assertTrue(bitSet.get(9));
+		assertTrue(bitSet.get(10));
+		assertTrue(bitSet.get(11));
+		
+		assertFalse(bitSet.get(12));
+		assertFalse(bitSet.get(13));
+		assertFalse(bitSet.get(14));
+		assertFalse(bitSet.get(15));
+		
+		assertTrue(bitSet.get(16));
+		assertTrue(bitSet.get(17));
+		assertTrue(bitSet.get(18));
+		assertTrue(bitSet.get(19));	
+		
+		assertFalse(bitSet.get(20));		
+		
+		assertTrue(bitSet.get(21));
+		
 
 	}
 
@@ -116,16 +143,42 @@ public class AsnInputStreamTest extends TestCase {
 		ByteArrayInputStream baIs = new ByteArrayInputStream(data);
 		AsnInputStream asnIs = new AsnInputStream(baIs);
 
-		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+		BitSet bitSet = new BitSet();
 		// here we have to explicitly read the Tag
 		int tagValue = asnIs.readTag();
-		asnIs.readBitString(byteArrayOutputStream);
-
-		byte[] resultData = byteArrayOutputStream.toByteArray();
-
-		for (int i = 0; i < resultData.length; i++) {
-			assertTrue(resultData[i] == octetString[i]);
-		}
+		asnIs.readBitString(bitSet, 0);
+		
+		//f0f0f4 is 111100001111000011110100 reduce 02 bits so total length is 22
+		assertEquals(22, bitSet.length());
+		assertTrue(bitSet.get(0));
+		assertTrue(bitSet.get(1));
+		assertTrue(bitSet.get(2));
+		assertTrue(bitSet.get(3));
+		
+		assertFalse(bitSet.get(4));
+		assertFalse(bitSet.get(5));
+		assertFalse(bitSet.get(6));
+		assertFalse(bitSet.get(7));
+		
+		assertTrue(bitSet.get(8));
+		assertTrue(bitSet.get(9));
+		assertTrue(bitSet.get(10));
+		assertTrue(bitSet.get(11));
+		
+		assertFalse(bitSet.get(12));
+		assertFalse(bitSet.get(13));
+		assertFalse(bitSet.get(14));
+		assertFalse(bitSet.get(15));
+		
+		assertTrue(bitSet.get(16));
+		assertTrue(bitSet.get(17));
+		assertTrue(bitSet.get(18));
+		assertTrue(bitSet.get(19));	
+		
+		assertFalse(bitSet.get(20));		
+		
+		assertTrue(bitSet.get(21));		
+		
 	}
 
 	@Test
@@ -527,7 +580,7 @@ public class AsnInputStreamTest extends TestCase {
 	public void testUTF8StringDefiniteShort() throws Exception
 	{
 		//ACEace$}
-		String dataString = "ACEace$} - S³u¿by wiedz¹, kto zorganizowa³ zamachy w metrze.";
+		String dataString = "ACEace$} - Sï¿½uï¿½by wiedzï¿½, kto zorganizowaï¿½ zamachy w metrze.";
 		byte[] data = dataString.getBytes(BERStatics.STRING_UTF8_ENCODING);
 		ByteArrayOutputStream bos = new ByteArrayOutputStream(10);
 		//write tag
@@ -550,7 +603,7 @@ public class AsnInputStreamTest extends TestCase {
 	public void testUTF8StringIndefinite_1() throws Exception
 	{
 		//ACEace$}
-		String dataString = "ACEace$} S³u¿by wiedz¹.";
+		String dataString = "ACEace$} Sï¿½uï¿½by wiedzï¿½.";
 		String resultString = dataString+dataString+dataString+dataString;
 		byte[] data = dataString.getBytes(BERStatics.STRING_UTF8_ENCODING);
 	
@@ -604,7 +657,7 @@ public class AsnInputStreamTest extends TestCase {
 	public void testUTF8StringIndefinite_2() throws Exception
 	{
 		//ACEace$}
-		String dataString = "ACEace$} S³u¿by wiedz¹.";
+		String dataString = "ACEace$} Sï¿½uï¿½by wiedzï¿½.";
 		String resultString = dataString+dataString+dataString+dataString;
 		byte[] data = dataString.getBytes(BERStatics.STRING_UTF8_ENCODING);
 	
@@ -657,7 +710,7 @@ public class AsnInputStreamTest extends TestCase {
 	public void testUTF8StringIndefinite_3() throws Exception
 	{
 		//ACEace$}
-		String dataString = "ACEace$} S³u¿by wiedz¹.";
+		String dataString = "ACEace$} Sï¿½uï¿½by wiedzï¿½.";
 		String resultString = dataString+dataString+dataString+dataString;
 		byte[] data = dataString.getBytes(BERStatics.STRING_UTF8_ENCODING);
 	

@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.util.BitSet;
 
 /**
  * 
@@ -17,7 +18,6 @@ import java.nio.ByteBuffer;
 public class AsnInputStream extends FilterInputStream {
 
 	private static final int DATA_BUCKET_SIZE = 1024;
-
 
 	// TODO : There should be getter / setter for these two?
 	private int tagClass = -1;
@@ -308,165 +308,150 @@ public class AsnInputStream extends FilterInputStream {
 
 	}
 
-	
-	public String readIA5String() throws AsnException, IOException
-	{
-		
-		return readString(BERStatics.STRING_IA5_ENCODING,Tag.STRING_IA5);
-		
+	public String readIA5String() throws AsnException, IOException {
+
+		return readString(BERStatics.STRING_IA5_ENCODING, Tag.STRING_IA5);
+
 	}
-	
-	public String readUTF8String() throws AsnException, IOException
-	{
-		return readString(BERStatics.STRING_UTF8_ENCODING,Tag.STRING_UTF8);	
-		
+
+	public String readUTF8String() throws AsnException, IOException {
+		return readString(BERStatics.STRING_UTF8_ENCODING, Tag.STRING_UTF8);
+
 	}
-	private String readString(String charset, int tagValue) throws IOException, AsnException
-	{
+
+	private String readString(String charset, int tagValue) throws IOException, AsnException {
 		int length = readLength();
-		if(tagClass != Tag.CLASS_UNIVERSAL)
-		{
-			throw new AsnException("Wrong tag class for IA5 string, should be universal["+Tag.CLASS_UNIVERSAL+"]: "+tagClass);
+		if (tagClass != Tag.CLASS_UNIVERSAL) {
+			throw new AsnException("Wrong tag class for IA5 string, should be universal[" + Tag.CLASS_UNIVERSAL + "]: "
+					+ tagClass);
 		}
-		
-		//NOTE: this is required since we read tag and length before going into recursive function
+
+		// NOTE: this is required since we read tag and length before going into recursive function
 		//
-		
-		//check
-		//constructed
-		if(pCBit == 0)
-		{
-			//prmitive
-			//check L
-			if( (length & 0x80) == 0 )
-			{
-				//short form
+
+		// check
+		// constructed
+		if (pCBit == 0) {
+			// prmitive
+			// check L
+			if ((length & 0x80) == 0) {
+				// short form
 				ByteArrayOutputStream bos = new ByteArrayOutputStream(length);
 				this.fillOutputStream(bos, length);
-				String s = new String(bos.toByteArray(),charset);
+				String s = new String(bos.toByteArray(), charset);
 				return s;
-			}else
-			{
-				//long form 
-				/*we can have up to 126 octets to store total L.... a biggie :)
-				 * 2,7430620343968443416279681255936e+303 - dont think java can handle that....
-				*/
-				//this can blow....
-				
+			} else {
+				// long form
+				/*
+				 * we can have up to 126 octets to store total L.... a biggie :) 2,7430620343968443416279681255936e+303 -
+				 * dont think java can handle that....
+				 */
+				// this can blow....
 				ByteArrayOutputStream bos = new ByteArrayOutputStream(length & 0x7F);
 				this.fillOutputStream(bos, length & 0x7F);
-				//now we have bytes representing length in table;
-				byte[] lengthBytes = bos.toByteArray();//this is copy
-				//TODO: implement this
-				//return null;
+				// now we have bytes representing length in table;
+				byte[] lengthBytes = bos.toByteArray();// this is copy
+				// TODO: implement this
+				// return null;
 				throw new UnsupportedOperationException();
-				
+
 			}
-			
-			//this.fillOutputStream(stream, length)
-		}else
-		{
-			//constructed
+
+			// this.fillOutputStream(stream, length)
+		} else {
+			// constructed
 			if (length != 0x80) {
 				throw new AsnException("The length field of Constructed IA5String is not 0x80");
 			}
-			//its case: T L [TLV TLV TL[TLV TLV 0 0] 0 0]
-			
+			// its case: T L [TLV TLV TL[TLV TLV 0 0] 0 0]
+
 			ByteArrayOutputStream bos = new ByteArrayOutputStream();
-			this.readConstructedString(bos,tagValue);
-			String s = new String(bos.toByteArray(),charset);
+			this.readConstructedString(bos, tagValue);
+			String s = new String(bos.toByteArray(), charset);
 			return s;
 		}
 	}
+
 	/**
 	 * Reads string from constructed form, it calls itself as many times as needed to get full content of string
+	 * 
 	 * @param bos
-	 * @param parentTag - tag of parrent, this will be used to check if contents are proper.
+	 * @param parentTag -
+	 *            tag of parrent, this will be used to check if contents are proper.
 	 * @throws AsnException
 	 * @throws IOException
 	 */
-	private void readConstructedString(ByteArrayOutputStream bos, int parentTag) throws AsnException, IOException
-	{
-		
-		
-		
-		while(_readConstructedString(bos, parentTag))
-		{
-			
+	private void readConstructedString(ByteArrayOutputStream bos, int parentTag) throws AsnException, IOException {
+
+		while (_readConstructedString(bos, parentTag)) {
+
 		}
 	}
-	private boolean _readConstructedString(ByteArrayOutputStream bos, int parentTag) throws AsnException, IOException
-	{
-		//this local tag values are not stored in local vars
-		int localTag=this.readTag();
+
+	private boolean _readConstructedString(ByteArrayOutputStream bos, int parentTag) throws AsnException, IOException {
+		// this local tag values are not stored in local vars
+		int localTag = this.readTag();
 		int localLength = this.readLength();
-		//check for null, this is stop condition for this function :)
-		if(localLength == 0x00 && localTag == 0x00)
-		{
-			//do nothing
+		// check for null, this is stop condition for this function :)
+		if (localLength == 0x00 && localTag == 0x00) {
+			// do nothing
 			return false;
 		}
-		
-		//check tag class
-		if(tagClass != Tag.CLASS_UNIVERSAL)
-		{
-			throw new AsnException("Wrong tag class for IA5 string, should be universal["+Tag.CLASS_UNIVERSAL+"]: "+tagClass);
+
+		// check tag class
+		if (tagClass != Tag.CLASS_UNIVERSAL) {
+			throw new AsnException("Wrong tag class for IA5 string, should be universal[" + Tag.CLASS_UNIVERSAL + "]: "
+					+ tagClass);
 		}
 		localTag = localTag & Tag.TAG_MASK;
-		if(parentTag!=localTag)
-		{
-			throw new AsnException("Parent tag: "+parentTag+", does not match member tag: "+localTag);
+		if (parentTag != localTag) {
+			throw new AsnException("Parent tag: " + parentTag + ", does not match member tag: " + localTag);
 		}
-		
-		//ok, now we have to do all the checks on tag content
-		if(pCBit == 0)
-		{
-			//primitive
-			//check L
-			if( (localLength & 0x80) == 0 )
-			{
-				//read bytes
-				this.fillOutputStream(bos, localLength);
-				//call again
-				//this.readConstructedString(bos, parentTag);
-				return true;
-			}else
-			{
-				//long form 
-				/*we can have up to 126 octets to store total L.... a biggie :)
-				 * 2,7430620343968443416279681255936e+303 - dont think java can handle that....
-				*/
-				//this can blow....
-				
-//				ByteArrayOutputStream bos = new ByteArrayOutputStream(length & 0x7F);
-//				this.fillOutputStream(bos, length & 0x7F);
-//				//now we have bytes representing length in table;
-//				byte[] lengthBytes = bos.toByteArray();//this is copy
-				throw new UnsupportedOperationException();
-				//return true;
-				
-			}
-			
-			//this.fillOutputStream(stream, length)
-		}else
-		{
 
-			//constructed & again
+		// ok, now we have to do all the checks on tag content
+		if (pCBit == 0) {
+			// primitive
+			// check L
+			if ((localLength & 0x80) == 0) {
+				// read bytes
+				this.fillOutputStream(bos, localLength);
+				// call again
+				// this.readConstructedString(bos, parentTag);
+				return true;
+			} else {
+				// long form
+				/*
+				 * we can have up to 126 octets to store total L.... a biggie :) 2,7430620343968443416279681255936e+303 -
+				 * dont think java can handle that....
+				 */
+				// this can blow....
+				// ByteArrayOutputStream bos = new ByteArrayOutputStream(length & 0x7F);
+				// this.fillOutputStream(bos, length & 0x7F);
+				// //now we have bytes representing length in table;
+				// byte[] lengthBytes = bos.toByteArray();//this is copy
+				throw new UnsupportedOperationException();
+				// return true;
+
+			}
+
+			// this.fillOutputStream(stream, length)
+		} else {
+
+			// constructed & again
 			if (localLength != 0x80) {
 				throw new AsnException("The length field of Constructed IA5String is not 0x80");
 			}
-			//its case: T L [TLV TLV TL[TLV TLV 0 0] 0 0] again, cmon....
-			//this.readConstructedString(bos, parentTag);
-			while(this._readConstructedString(bos, parentTag))
-			{
-				//keep spining.
+			// its case: T L [TLV TLV TL[TLV TLV 0 0] 0 0] again, cmon....
+			// this.readConstructedString(bos, parentTag);
+			while (this._readConstructedString(bos, parentTag)) {
+				// keep spining.
 			}
-			//this call is finished, but maybe someone up can do more
+			// this call is finished, but maybe someone up can do more
 			return true;
 		}
-		
-		
+
 	}
+
 	private int getPadMask(int pad) throws AsnException {
 		switch (pad) {
 		case 0:
@@ -491,25 +476,36 @@ public class AsnInputStream extends FilterInputStream {
 
 	}
 
-	public void readBitString(OutputStream outputStream) throws AsnException, IOException {
+	public int readBitString(BitSet bitSet, int counter) throws AsnException, IOException {
 
 		int length = this.readLength();
+		int bits = 0;
 
 		if (this.pCBit == 0) {
 			int pad = this.read();
 
-			//TODO We are assuming that there is always pad, even if it is 00. This may not be true for some Constructed
+			// TODO We are assuming that there is always pad, even if it is 00. This may not be true for some
+			// Constructed
 			// BitString where padding is only applied to last TLV. In which case this algo is incorrect
 			for (int count = 1; count < (length - 1); count++) {
-				int dataByte = this.read();
-				outputStream.write(dataByte);
+				byte dataByte = (byte) this.read();
+				for (bits = 0; bits < 8; bits++) {
+					if (0 != (dataByte & (0x80 >> bits))) {
+						bitSet.set(counter);
+					}
+					++counter;
+				}
 			}
 
-			int lastByte = this.read();
-
-			lastByte &= this.getPadMask(pad);
-
-			outputStream.write(lastByte);
+			byte lastByte = (byte) this.read();
+			for (bits = 0; bits < (8 - pad); bits++) {
+				if (0 != (lastByte & (0x80 >> bits))) {
+					bitSet.set(counter);
+				}
+				++counter;
+			}
+			
+			return counter;
 
 		} else {
 			if (length != 0x80) {
@@ -518,10 +514,10 @@ public class AsnInputStream extends FilterInputStream {
 
 			int tagValue = -1;
 			while ((tagValue = this.readTag()) != 0x0) {
-				readBitString(outputStream);
+				counter = readBitString(bitSet, counter);
 			}
 		}
-
+		return counter;
 	}
 
 	/**
