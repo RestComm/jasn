@@ -16,7 +16,7 @@ import java.util.BitSet;
  */
 @SuppressWarnings("unused")
 public class AsnInputStream extends FilterInputStream {
-
+	private static final String _REAL_BASE10_CHARSET = "US-ASCII";
 	private static final int DATA_BUCKET_SIZE = 1024;
 
 	// TODO : There should be getter / setter for these two?
@@ -147,7 +147,11 @@ public class AsnInputStream extends FilterInputStream {
 			throw new AsnException("Length for Integer is -1");
 
 		if (length == 0)
-			return value;
+		{
+			//BER forbids this
+			//return value;
+			throw new AsnException("BER encoding does not allow zero to be represented by primitive TL, without V");
+		}
 
 		temp = (byte) this.read();
 		value = temp;
@@ -163,11 +167,6 @@ public class AsnInputStream extends FilterInputStream {
 	/**
 	 * Reads and converts for {@link Tag#REAL} primitive
 	 * 
-	 * @param base10 -
-	 *            <ul>
-	 *            <li><b>true</b> if real is encoded in base of 10 ( decimal )</li>
-	 *            <li><b>false</b> if real is encoded in base of 2 ( binary )</li>
-	 *            </ul>
 	 * @return
 	 * @throws AsnException
 	 * @throws IOException
@@ -199,14 +198,16 @@ public class AsnInputStream extends FilterInputStream {
 		length--;
 
 		// only binary has first bit of info set to 1;
+		//FIXME: use different ops! 
 		boolean base10 = (((infoBits >> 7) & 0x01) == 0x00);
 		// now the tricky part, this takes into account base10
 		if (base10) {
+			//FIXME: add check on boundry of simple length
 			// encoded as char string
 			ByteArrayOutputStream bos = new ByteArrayOutputStream(length);
 			this.fillOutputStream(bos, length);
 			// IA5 == ASCII...?
-			String nrRep = new String(bos.toByteArray(), "US-ASCII");
+			String nrRep = new String(bos.toByteArray(),_REAL_BASE10_CHARSET);
 			// this will swallow NR(1-3) and give proper double :)
 			return Double.parseDouble(nrRep);
 		} else {

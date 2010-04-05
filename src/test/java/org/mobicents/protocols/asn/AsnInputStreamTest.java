@@ -15,7 +15,7 @@ import org.junit.Test;
 /**
  * 
  * @author amit bhayani
- * 
+ * @author baranowb
  */
 public class AsnInputStreamTest extends TestCase {
 

@@ -1,0 +1,278 @@
+package org.mobicents.protocols.asn;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
+
+/**
+ * Stream to handle BER endcoding of data. Provides primitives encoding. Takes
+ * care of encoding
+ * 
+ * @author abhayani
+ * @author baranowb
+ */
+public class AsnOutputStream extends ByteArrayOutputStream {
+	// charset used to encode real data
+	private static final String _REAL_BASE10_CHARSET = "US-ASCII";
+	// out patterns for bool
+	private static final byte _BOOLEAN_POSITIVE = (byte) 0xFF;
+	private static final byte _BOOLEAN_NEGATIVE = 0x00;
+
+	// FIXME: check how much we write after each tag?
+	// some state
+	// private byte length = 0;
+
+	/**
+	 * Method used to write tags for common types - be it complex or primitive.
+	 * 
+	 * @param tagClass
+	 * @param primitive
+	 * @param value
+	 *            - less significant bits(4) are encoded as tag code
+	 */
+	void writeTag(int tagClass, boolean primitive, int value) {
+
+		int toEncode = (tagClass & 0x03) << 6;
+		toEncode |= (primitive ? 0 : 1) << 5;
+		toEncode |= value & 0x1F;
+		this.write(toEncode);
+	}
+
+	/**
+	 * Method used to write tags for common types - be it complex or primitive.
+	 * 
+	 * @param tagClass
+	 * @param primitive
+	 * @param value
+	 *            - less significant bits(4) are encoded as tag code
+	 */
+	public void writeTag(int tagClass, boolean primitive, byte[] value) {
+
+		int toEncode = (tagClass & 0x03) << 6;
+		toEncode |= (primitive ? 0 : 1) << 5;
+		// toEncode |= value & 0x0F;
+		// FIXME: add hack here
+		this.write(toEncode);
+	}
+
+	/**
+	 * Writes length in simple or indefinite form
+	 * 
+	 * @param l
+	 */
+	public void writeLength(int l) {
+		this.write(l & 0xFF);
+	}
+
+	public void writeBoolean(boolean value) {
+		writeTag(Tag.CLASS_UNIVERSAL, true, Tag.BOOLEAN);
+		writeLength(0x01);
+
+		int V = value ? _BOOLEAN_POSITIVE : _BOOLEAN_NEGATIVE;
+		this.write(V);
+	}
+
+	public void writeNULL() {
+		writeTag(Tag.CLASS_UNIVERSAL, true, Tag.NULL);
+		writeLength(0x00);
+	}
+
+	public void writeInteger(int v) throws IOException {
+		// TAG
+		this.writeTag(Tag.CLASS_UNIVERSAL, true, Tag.INTEGER);
+		// if its positive, we need trailing 0x00
+		boolean wasPositive = v > 0;
+		if (!wasPositive) {
+			v = -v;
+		}
+		// determine how much we should write :)
+		int count = 0;
+		if ((v & 0xFF000000) > 0) {
+			count = 4;
+		} else if ((v & 0x00FF0000) > 0) {
+			count = 3;
+		} else if ((v & 0x0000FF00) > 0) {
+			count = 2;
+		} else {
+			count = 1;
+		}
+
+		// make the proper val;
+		if (!wasPositive) {
+			v = -v;
+		}
+		// now we know how much bytes we need from V, for positive with MSB set
+		// on MSB-like octet, we need trailing 0x00, this L+1;
+		// FIXME: change this, tmp hack.
+		ByteBuffer bb = ByteBuffer.allocate(4);
+		bb.putInt(v);
+		bb.flip();
+		for (int c = 4 - count; c > 0; c--) {
+			bb.get();
+		}
+		byte[] dataToWrite = new byte[count];
+		bb.get(dataToWrite);
+		if (wasPositive && ((dataToWrite[0] & 0x80) > 0)) {
+			this.writeLength(dataToWrite.length + 1);
+			this.write(0x00);
+		} else {
+			this.writeLength(dataToWrite.length);
+		}
+		this.write(dataToWrite);
+	}
+
+	/**
+	 * 
+	 * @param d
+	 *            - string representing double
+	 * @param NR
+	 *            - NR to be written, must match string content.
+	 * @throws AsnException
+	 * @throws IOException
+	 */
+	public void writeReal(String d, int NR) throws AsnException, IOException {
+		// check?
+		Double.parseDouble(d);
+		// This is weird, BER does not allow L = 0 for zero on integer, but for
+		// real it does.... cmon
+		this.writeTag(Tag.CLASS_UNIVERSAL, true, Tag.REAL);
+		byte[] encoded = null;
+		try {
+			encoded = d.getBytes(_REAL_BASE10_CHARSET);
+		} catch (UnsupportedEncodingException e) {
+			throw new AsnException(e);
+		}
+
+		// FIXME: add check on length exceeding simple boundry!
+		if (encoded.length + 1 > 127) {
+			throw new AsnException("Not supported yet, is it even in specs?");
+		}
+
+		this.writeLength(encoded.length + 1);
+		if (NR > 3 || NR < 0) {
+			throw new AsnException("NR is out of range: <0,3>");
+		}
+		this.write(NR);
+
+		this.write(encoded);
+
+	}
+
+	public void writeReal(double d) throws AsnException, IOException {
+		// This is weird, BER does not allow L = 0 for zero on integer, but for
+		// real it does.... cmon
+		this.writeTag(Tag.CLASS_UNIVERSAL, true, Tag.REAL);
+		if (d == 0) {
+			this.writeLength(0x00);
+			return;
+		}
+
+		if (d == Double.POSITIVE_INFINITY) {
+			this.writeLength(0x01);
+			this.write(0x40);
+			return;
+		}
+
+		if (d == Double.NEGATIVE_INFINITY) {
+			this.writeLength(0x01);
+			this.write(0x41);
+		}
+
+		// now that sucky stuff with FF,BB,EE ....
+		// see:
+		// http://en.wikipedia.org/wiki/Single_precision_floating-point_format
+		// : http://en.wikipedia.org/wiki/Double_precision_floating-point_format
+
+		// L: 8 for bits(however we have more +1 since exp and mantisa dont end
+		// on octet boundry), 1 for info bits
+		this.writeLength(10);
+		// get sign;
+		long bits = Double.doubleToLongBits(d);
+		// get sign bit
+		int info = ((int) (bits >> 57)) & 0x40;
+		// 10 00 00 01
+		// binary+0 sign BB[2] FF[0] EE[2]
+		info |= 0x81;
+
+		this.write(info);
+
+		// get 11 bits of exp
+		byte[] exp = new byte[2];
+		byte[] mantisa = new byte[7];
+
+		// 3 bits
+		exp[0] = (byte) (((int) (bits >> 60)) & 0x3);
+		exp[1] = (byte) (bits >> 52);
+		for (int index = 0; index < 7; index++) {
+			mantisa[index] = (byte) (bits >> (index * 8));
+
+		}
+
+		mantisa[mantisa.length - 1] &= 0x0F;
+
+		this.write(exp);
+		this.write(mantisa);
+
+	}
+
+	public void writeStringUTF8(String data) throws AsnException, IOException {
+		byte[] dataEncoded = null;
+		try {
+			dataEncoded = data.getBytes(BERStatics.STRING_UTF8_ENCODING);
+		} catch (UnsupportedEncodingException e) {
+			throw new AsnException(e);
+		}
+		writeString(dataEncoded, Tag.STRING_UTF8);
+	}
+
+	public void writeStringIA5(String data) throws AsnException, IOException {
+		byte[] dataEncoded = null;
+		try {
+			dataEncoded = data.getBytes(BERStatics.STRING_IA5_ENCODING);
+		} catch (UnsupportedEncodingException e) {
+			throw new AsnException(e);
+		}
+		writeString(dataEncoded, Tag.STRING_IA5);
+	}
+
+	private void writeString(byte[] dataEncoded, int stringTag) throws AsnException, IOException {
+		
+		if (dataEncoded.length <= 127) {
+			// its simple :
+			this.writeTag(Tag.CLASS_UNIVERSAL, true, stringTag);
+			this.writeLength(dataEncoded.length);
+			this.write(dataEncoded);
+		}else
+		{
+			this.writeTag(Tag.CLASS_UNIVERSAL, false, stringTag);
+			//indefinite
+			this.writeLength(0x80);
+			//now lets write fractions, 127 octet chunks
+			
+			ByteArrayInputStream bis = new ByteArrayInputStream(dataEncoded);
+			int count = bis.available();
+			while( count>0)
+			{
+				
+				byte[] dataChunk = new byte[count > 127?127: count];
+				bis.read(dataChunk);
+				this.writeString(dataChunk, stringTag);
+				count -= dataChunk.length;
+			}
+			//terminate complex
+			this.write(Tag.NULL_TAG);
+			this.write(Tag.NULL_VALUE);
+			
+			
+		}
+
+	}
+
+	// FIXME: we need this also?
+	// public void writeReal(float d) {
+	//
+	// }
+
+}
