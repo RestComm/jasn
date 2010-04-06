@@ -32,6 +32,7 @@ public class Tag {
 	public static final int STRING_BIT = 0x03;
 	public static final int STRING_OCTET = 0x04;
 	public static final int NULL = 0x05;
+    public static final int OBJECT_IDENTIFIER = 0x06;
 	public static final int REAL = 0x09;
 	public static final int ENUMERATED = 0x0A;
 	public static final int STRING_UTF8 = 0x0C;

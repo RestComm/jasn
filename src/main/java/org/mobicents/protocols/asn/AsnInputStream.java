@@ -146,10 +146,9 @@ public class AsnInputStream extends FilterInputStream {
 		if (length == -1)
 			throw new AsnException("Length for Integer is -1");
 
-		if (length == 0)
-		{
-			//BER forbids this
-			//return value;
+		if (length == 0) {
+			// BER forbids this
+			// return value;
 			throw new AsnException("BER encoding does not allow zero to be represented by primitive TL, without V");
 		}
 
@@ -198,16 +197,16 @@ public class AsnInputStream extends FilterInputStream {
 		length--;
 
 		// only binary has first bit of info set to 1;
-		//FIXME: use different ops! 
+		// FIXME: use different ops!
 		boolean base10 = (((infoBits >> 7) & 0x01) == 0x00);
 		// now the tricky part, this takes into account base10
 		if (base10) {
-			//FIXME: add check on boundry of simple length
+			// FIXME: add check on boundry of simple length
 			// encoded as char string
 			ByteArrayOutputStream bos = new ByteArrayOutputStream(length);
 			this.fillOutputStream(bos, length);
 			// IA5 == ASCII...?
-			String nrRep = new String(bos.toByteArray(),_REAL_BASE10_CHARSET);
+			String nrRep = new String(bos.toByteArray(), _REAL_BASE10_CHARSET);
 			// this will swallow NR(1-3) and give proper double :)
 			return Double.parseDouble(nrRep);
 		} else {
@@ -580,6 +579,51 @@ public class AsnInputStream extends FilterInputStream {
 			stream.write(dataBucket, 0, readCount);
 			length -= readCount;
 		}
+	}
+
+	public long[] readObjectIdentifier() throws AsnException, IOException {
+		
+		int tagValue = this.readTag();
+
+		if (tagValue != Tag.OBJECT_IDENTIFIER) {
+			throw new AsnException("Tag doesn't represent Object ID. Tag Class " + this.tagClass + " P/C flag "
+					+ this.pCBit + " Tag Value " + tagValue);
+		}
+		
+		int length = readLength();
+
+		if (length == -1)
+			throw new AsnException("Length is -1");
+		byte[] data = new byte[length];
+		read(data);
+
+		length = 2;
+		for (int i = 1; i < data.length; ++i) {
+			if (data[i] >= 0)
+				++length;
+		}
+		long[] oids = new long[length];
+
+		int b = 0x00FF & data[0];
+
+		// The first octet has value 40 * value1 + value2.
+		oids[0] = b / 40;
+		oids[1] = b % 40;
+
+		int v = 0;
+		length = 2;
+		for (int i = 1; i < data.length; ++i) {
+			
+			byte b1 = data[i];
+			if((b1 & 0x80) != 0x0){
+				v = (v << 7) | ((b1 & 0x7F)); 
+			} else{
+				v = (v << 7) | (b1 & 0x7F); 
+				oids[length++] = v;
+				v = 0;
+			}
+		}
+		return oids;
 	}
 
 }
