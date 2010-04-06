@@ -264,9 +264,10 @@ public class AsnInputStream extends FilterInputStream {
 
 				n |= readV;
 			}
+			
 			// check for possible overflow
-			if (n > 4503599627370495L) {
-				throw new AsnException("Overflow on mantissa");
+			if ((n & 0x0FFFFFFF) > 4503599627370495L) { // num is 11 bits lit to "1"
+				throw new AsnException("Overflow on mantisa");
 			}
 			// we have real part, now lets add that scale; this is M x (2^F), which essentialy is bit shift :)
 			int shift = (int) Math.pow(2, s) - 1; // -1 for 2, where we dont shift
@@ -478,7 +479,7 @@ public class AsnInputStream extends FilterInputStream {
 	}
 
 	public int readBitString(BitSet bitSet, int counter) throws AsnException, IOException {
-
+		//TODO: make it work as recursion
 		int length = this.readLength();
 		int bits = 0;
 

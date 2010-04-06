@@ -46,9 +46,9 @@ public interface BERStatics {
 	 */
 	public static final int REAL_BB_EE_MASK = 0x3;
 	
-	public static final int REAL_NR1 = 0x01;
-	public static final int REAL_NR2 = 0x10;
-	public static final int REAL_NR3 = 0x11;
+	public static final int REAL_NR1 = 0x1;
+	public static final int REAL_NR2 = 0x2;
+	public static final int REAL_NR3 = 0x3;
 	
 	public static final String STRING_IA5_ENCODING = "US-ASCII";
 	public static final String STRING_UTF8_ENCODING = "UTF-8";

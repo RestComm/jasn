@@ -3,8 +3,10 @@ package org.mobicents.protocols.asn;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
+import java.util.BitSet;
 
 /**
  * Stream to handle BER endcoding of data. Provides primitives encoding. Takes
@@ -132,7 +134,7 @@ public class AsnOutputStream extends ByteArrayOutputStream {
 	 * @throws AsnException
 	 * @throws IOException
 	 */
-	public void writeReal(String d, int NR) throws AsnException, IOException {
+	public void writeReal(String d, int NR) throws AsnException,NumberFormatException, IOException {
 		// check?
 		Double.parseDouble(d);
 		// This is weird, BER does not allow L = 0 for zero on integer, but for
@@ -151,7 +153,8 @@ public class AsnOutputStream extends ByteArrayOutputStream {
 		}
 
 		this.writeLength(encoded.length + 1);
-		if (NR > 3 || NR < 0) {
+
+		if (NR > 3 || NR < 1) {
 			throw new AsnException("NR is out of range: <0,3>");
 		}
 		this.write(NR);
@@ -178,6 +181,7 @@ public class AsnOutputStream extends ByteArrayOutputStream {
 		if (d == Double.NEGATIVE_INFINITY) {
 			this.writeLength(0x01);
 			this.write(0x41);
+			return;
 		}
 
 		// now that sucky stuff with FF,BB,EE ....
@@ -203,20 +207,175 @@ public class AsnOutputStream extends ByteArrayOutputStream {
 		byte[] mantisa = new byte[7];
 
 		// 3 bits
-		exp[0] = (byte) (((int) (bits >> 60)) & 0x3);
+		exp[0] = (byte) (((int) (bits >> 60)) & 0x07);
 		exp[1] = (byte) (bits >> 52);
 		for (int index = 0; index < 7; index++) {
-			mantisa[index] = (byte) (bits >> (index * 8));
+			mantisa[6 - index] = (byte) (bits >> (index * 8));
 
 		}
 
-		mantisa[mantisa.length - 1] &= 0x0F;
+		mantisa[0] &= 0x0F;
 
 		this.write(exp);
 		this.write(mantisa);
 
 	}
+	
+	
+	public void writeStringOctet( InputStream io ) throws AsnException, IOException
+	{
+		if (io.available() <= 127) {
+			// its simple :
+			this.writeTag(Tag.CLASS_UNIVERSAL, true, Tag.STRING_OCTET);
+			this.writeLength(io.available());
+			byte[] data = new byte[io.available()];
+			io.read(data);
+			this.write(data);
+		}else
+		{
+			this.writeTag(Tag.CLASS_UNIVERSAL, false, Tag.STRING_OCTET);
+			//indefinite
+			this.writeLength(0x80);
+			//now lets write fractions, 127 octet chunks
+			
+			
+			int count = io.available();
+			while( count>0)
+			{
+				
+				byte[] dataChunk = new byte[count > 127?127: count];
+				io.read(dataChunk);
+				this.writeString(dataChunk, Tag.STRING_OCTET);
+				count -= dataChunk.length;
+			}
+			//terminate complex
+			this.write(Tag.NULL_TAG);
+			this.write(Tag.NULL_VALUE);
+			
+			
+		}
+		
+		
+	}
 
+	public void writeStringBinary(BitSet bitString) throws AsnException, IOException
+	{
+		//DONT USE BitSet.size();
+		writeStringBinary(bitString,bitString.length(),0);
+	}
+	/**
+	 * 
+	 * @param bitString
+	 * @param bitNumber
+	 * @param startIndex
+	 * @throws AsnException
+	 * @throws IOException
+	 */
+	private void writeStringBinary(BitSet bitString, int bitNumber, int startIndex) throws AsnException, IOException {
+		
+
+		
+		//check if we can write it in simple form
+		int octetCount = bitNumber/8;
+		int rest = bitNumber%8;
+		if(rest!=0)
+		{
+			octetCount++;
+		}
+		//126 - cause bit string has one extra octet.
+		if(octetCount<=126)
+		{
+			this.writeTag(Tag.CLASS_UNIVERSAL, true, Tag.STRING_BIT);
+			this.writeLength(octetCount+1);
+			//the extra octet from bit string
+			if(rest == 0)
+			{
+				this.write(0);
+			}else
+			{
+				this.write(8-rest);
+			}
+
+	
+			//this will padd unused bits with zeros
+			for(int i = 0;i<octetCount;i++)
+			{
+				byte byteRead = _getByte(startIndex+i*8, bitString);
+				this.write(byteRead);
+			}
+			
+			
+			
+		}else
+		{
+			
+			this.writeTag(Tag.CLASS_UNIVERSAL, false, Tag.STRING_BIT);
+			//indefinite
+			this.writeLength(0x80);
+			int count = octetCount;
+			int lastBitIndex = startIndex;
+			while( count>0 )
+			{
+				
+				int dataChunkSize = count > 126?126: count;
+				
+				int localBitNum = dataChunkSize*8;
+				if(dataChunkSize != 126)
+				{
+					localBitNum+=rest;
+					if(rest!=0)
+					{
+						//we need to remove this, since its fake full octet, and we pass bit num.
+						localBitNum-=8;
+					}
+				}
+				this.writeStringBinary(bitString,localBitNum,lastBitIndex);
+				lastBitIndex+=dataChunkSize*8;
+				count -= dataChunkSize;
+			}
+			//terminate complex
+			this.write(Tag.NULL_TAG);
+			this.write(Tag.NULL_VALUE);
+		}
+	}
+	/**
+	 * Attepts to read up to 8 bits and store into byte. If less is found, only those are returned
+	 * @param startIndex
+	 * @param set
+	 * @return
+	 * @throws AsnException 
+	 */
+	private static byte _getByte(int startIndex, BitSet set) throws AsnException
+	{
+		
+		int count = 8;
+		byte data = 0;
+		
+		if(set.length()-1<startIndex)
+		{
+			throw new AsnException();
+		}
+		
+		while(count>0)
+		{
+			if(set.length()-1<startIndex)
+			{
+				break;
+			}else
+			{
+				boolean lit = set.get(startIndex);
+				if(lit)
+				{
+					data|=(0x01 << (count-1));
+				}
+				
+				startIndex++;
+				count--;
+			}
+			
+		}
+		return data;
+	}
 	public void writeStringUTF8(String data) throws AsnException, IOException {
 		byte[] dataEncoded = null;
 		try {
