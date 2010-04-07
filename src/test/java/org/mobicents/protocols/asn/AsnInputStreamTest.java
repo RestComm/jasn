@@ -2,6 +2,7 @@ package org.mobicents.protocols.asn;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.util.Arrays;
 import java.util.BitSet;
 
 import junit.framework.TestCase;
@@ -722,6 +723,19 @@ public class AsnInputStreamTest extends TestCase {
 		for (int i = 0; i < decodedOID.length; i++) {
 			assertEquals(actualOID[i], decodedOID[i]);
 		}
+
+	}
+	
+	@Test
+	public void testObjectIdentifiers2() throws Exception {
+		// Test {iso(1) standard(0) 8571 abstract-syntax(2)}
+		byte[] data = new byte[] { 0x6, 0x7, 0x00, 0x11, (byte) 0x86, 0x05,0x01,0x02,0x01};
+
+		
+		ByteArrayInputStream baIs = new ByteArrayInputStream(data);
+		AsnInputStream asnIs = new AsnInputStream(baIs);
+		long[] decoded = asnIs.readObjectIdentifier();
+		System.err.println(Arrays.toString(decoded));
 
 	}
 }

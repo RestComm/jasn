@@ -34,7 +34,7 @@ public class AsnOutputStream extends ByteArrayOutputStream {
 	 * @param value
 	 *            - less significant bits(4) are encoded as tag code
 	 */
-	void writeTag(int tagClass, boolean primitive, int value) {
+	public void writeTag(int tagClass, boolean primitive, int value) {
 
 		int toEncode = (tagClass & 0x03) << 6;
 		toEncode |= (primitive ? 0 : 1) << 5;

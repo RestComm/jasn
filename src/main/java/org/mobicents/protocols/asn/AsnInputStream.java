@@ -583,12 +583,12 @@ public class AsnInputStream extends FilterInputStream {
 
 	public long[] readObjectIdentifier() throws AsnException, IOException {
 		
-		int tagValue = this.readTag();
-
-		if (tagValue != Tag.OBJECT_IDENTIFIER) {
-			throw new AsnException("Tag doesn't represent Object ID. Tag Class " + this.tagClass + " P/C flag "
-					+ this.pCBit + " Tag Value " + tagValue);
-		}
+//		int tagValue = this.readTag();
+//
+//		if (tagValue != Tag.OBJECT_IDENTIFIER) {
+//			throw new AsnException("Tag doesn't represent Object ID. Tag Class " + this.tagClass + " P/C flag "
+//					+ this.pCBit + " Tag Value " + tagValue);
+//		}
 		
 		int length = readLength();
 
