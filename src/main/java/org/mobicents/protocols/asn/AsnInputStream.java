@@ -16,13 +16,15 @@ import java.util.BitSet;
  */
 @SuppressWarnings("unused")
 public class AsnInputStream extends FilterInputStream {
+	//FIXME: ADD per last LEN reads - to fully support undefined len!
 	private static final String _REAL_BASE10_CHARSET = "US-ASCII";
 	private static final int DATA_BUCKET_SIZE = 1024;
 
 	// TODO : There should be getter / setter for these two?
 	private int tagClass = -1;
 	private int pCBit = -1;
-
+	private int tag;
+	private int rawTag;
 	public AsnInputStream(InputStream in) {
 		super(in);
 	}
@@ -39,29 +41,47 @@ public class AsnInputStream extends FilterInputStream {
 	public int readTag() throws IOException {
 		// Tag tag = null;
 		byte b = (byte) this.read();
+	
 
 		tagClass = (b & Tag.CLASS_MASK) >> 6;
 		pCBit = (b & Tag.PC_MASK) >> 5;
 
-		int value = b & Tag.TAG_MASK;
+		tag = b & Tag.TAG_MASK;
+		
 
 		// For larger tag values, the first octet has all ones in bits 5 to 1, and the tag value is then encoded in
 		// as many following octets as are needed, using only the least significant seven bits of each octet,
 		// and using the minimum number of octets for the encoding. The most significant bit (the "more"
 		// bit) is set to 1 in the first following octet, and to zero in the last.
-		if (value == Tag.TAG_MASK) {
+		if (tag == Tag.TAG_MASK) {
 			byte temp;
-			value = 0;
+			tag = 0;
 			do {
 				temp = (byte) this.read();
-				value = (value << 7) | (0x7F & temp);
+				tag = (tag << 7) | (0x7F & temp);
 			} while (0 != (0x80 & temp));
 		}
 
 		// tag = new Tag(tagClass, (pCBit == 0 ? true : false), value);
-		return value;
+		return tag;
 	}
 
+	//Access to bits
+	/**
+	 * @return the tagClass
+	 */
+	public int getTagClass() {
+		return tagClass;
+	}
+
+	/**
+	 * @return the pCBit
+	 */
+	public boolean isTagPrimitive() {
+		return pCBit == Tag.PC_PRIMITIVITE;
+	}
+	
+	
 	public int readLength() throws IOException {
 		int length = -1;
 
@@ -95,6 +115,8 @@ public class AsnInputStream extends FilterInputStream {
 
 		return length;
 	}
+
+	
 
 	/**
 	 * Reads and converts for {@link Tag#BOOLEAN} primitive
@@ -476,8 +498,11 @@ public class AsnInputStream extends FilterInputStream {
 		}
 
 	}
-
-	public int readBitString(BitSet bitSet, int counter) throws AsnException, IOException {
+	public void readBitString(BitSet bitSet) throws AsnException, IOException
+	{
+		this.readBitString(bitSet, 0);
+	}
+	private int readBitString(BitSet bitSet, int counter) throws AsnException, IOException {
 		//TODO: make it work as recursion
 		int length = this.readLength();
 		int bits = 0;
@@ -524,13 +549,12 @@ public class AsnInputStream extends FilterInputStream {
 	/**
 	 * Reads and converts for {@link Tag#STRING_OCTET} primitive
 	 * 
-	 * @param length
-	 * @param primitive
+
 	 * @param outputStream
 	 * @throws AsnException
 	 * @throws IOException
 	 */
-	public void readOctetString(OutputStream outputStream, int tagValue) throws AsnException, IOException {
+	public void readOctetString(OutputStream outputStream) throws AsnException, IOException {
 
 		// if(tagValue != Tag.STRING_OCTET){
 		// throw new AsnException("Tag doesn't represent Octet String. Tag Class "+ this.tagClass + " P/C flag "+
@@ -546,9 +570,9 @@ public class AsnInputStream extends FilterInputStream {
 			if (length != 0x80) {
 				throw new AsnException("The length field of Constructed OctetString is not 0x80");
 			}
-
-			while ((tagValue = this.readTag()) != 0x0) {
-				readOctetString(outputStream, tagValue);
+			//FIXME: this is completly wrong ?
+			while ((Tag.STRING_OCTET == this.readTag())) {
+				readOctetString(outputStream);
 			}
 		}
 	}
@@ -626,4 +650,19 @@ public class AsnInputStream extends FilterInputStream {
 		return oids;
 	}
 
+	public byte[] readSequence() throws AsnException, IOException
+	{
+		//only diff is in encoding seq.
+		int length = readLength();
+		if (length == -1)
+			throw new AsnException("Length is -1");
+		
+		if (length == 0x80) {
+			throw new AsnException("The length field is 0x80");
+		}
+		byte[] data = new byte[length];
+		this.read(data);
+		return data;
+	}
+	
 }

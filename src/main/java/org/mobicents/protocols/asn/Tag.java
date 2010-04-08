@@ -37,6 +37,7 @@ public class Tag {
 	public static final int REAL = 0x09;
 	public static final int ENUMERATED = 0x0A;
 	public static final int STRING_UTF8 = 0x0C;
+	public static final int SEQUENCE = 0x10; 
 	public static final int STRING_IA5 = 0x16;
 	//UNKNOWN, add this ....
 	public static final int OBJECT_DESCRIPTOR = 0xFF;

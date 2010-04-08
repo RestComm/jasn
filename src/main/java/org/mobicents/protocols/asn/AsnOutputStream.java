@@ -255,10 +255,14 @@ public class AsnOutputStream extends ByteArrayOutputStream {
 
 	}
 
-	public void writeStringBinary(BitSet bitString) throws AsnException,
-			IOException {
+	public void writeStringBinary(BitSet bitString) throws AsnException, IOException {
+		//FIXME: find way to write empty bites.?
+		this.writeStringBinary(bitString, Tag.CLASS_UNIVERSAL, Tag.STRING_BIT);
+	}
+
+	public void writeStringBinary(BitSet bitString, int tagClass, int tag) throws AsnException, IOException {
 		// DONT USE BitSet.size();
-		writeStringBinary(bitString, bitString.length(), 0);
+		_writeStringBinary(bitString, bitString.length(), 0, tagClass, tag);
 	}
 
 	/**
@@ -266,11 +270,13 @@ public class AsnOutputStream extends ByteArrayOutputStream {
 	 * @param bitString
 	 * @param bitNumber
 	 * @param startIndex
+	 * @param tag 
+	 * @param tagClass 
 	 * @throws AsnException
 	 * @throws IOException
 	 */
-	private void writeStringBinary(BitSet bitString, int bitNumber,
-			int startIndex) throws AsnException, IOException {
+	private void _writeStringBinary(BitSet bitString, int bitNumber,
+			int startIndex, int tagClass, int tag) throws AsnException, IOException {
 
 		// check if we can write it in simple form
 		int octetCount = bitNumber / 8;
@@ -280,7 +286,7 @@ public class AsnOutputStream extends ByteArrayOutputStream {
 		}
 		// 126 - cause bit string has one extra octet.
 		if (octetCount <= 126) {
-			this.writeTag(Tag.CLASS_UNIVERSAL, true, Tag.STRING_BIT);
+			this.writeTag(tagClass, true, tag);
 			this.writeLength(octetCount + 1);
 			// the extra octet from bit string
 			if (rest == 0) {
@@ -297,7 +303,7 @@ public class AsnOutputStream extends ByteArrayOutputStream {
 
 		} else {
 
-			this.writeTag(Tag.CLASS_UNIVERSAL, false, Tag.STRING_BIT);
+			this.writeTag(tagClass, false, tag);
 			// indefinite
 			this.writeLength(0x80);
 			int count = octetCount;
@@ -444,6 +450,7 @@ public class AsnOutputStream extends ByteArrayOutputStream {
 		for (i = 2; i < oidLeafs.length; ++i) {
 			len += getOIDLeafLength(oidLeafs[i]);
 		}
+		this.writeTag(Tag.CLASS_UNIVERSAL, true/*lol*/, Tag.OBJECT_IDENTIFIER);
 		writeLength(len);
 
 		// Now add the OID bytes
@@ -463,6 +470,13 @@ public class AsnOutputStream extends ByteArrayOutputStream {
 			}
 			this.write((int) (0x007F & v));
 		}
+	}
+	
+	public void writeSequence(byte[] encodedTLV) throws IOException
+	{
+		this.writeTag(Tag.CLASS_UNIVERSAL, false, Tag.SEQUENCE);
+		this.writeLength(encodedTLV.length);
+		this.write(encodedTLV);
 	}
 
 }
