@@ -413,7 +413,7 @@ public class AsnOutputStreamTest extends TestCase {
 	@Test
 	public void testObjectIdentifier() throws Exception {
 		
-		byte[] expected = new byte[] { 0x6, 0x4, 0x28, (byte) 0xC2, (byte) 0x7B, 0x02 };
+		byte[] expected = new byte[] {Tag.OBJECT_IDENTIFIER, 0x6, 0x4, 0x28, (byte) 0xC2, (byte) 0x7B, 0x02 };
 		
 		long[] oids = new long[]{1, 0, 8571, 2};
 

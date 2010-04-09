@@ -41,7 +41,6 @@ public class AsnInputStream extends FilterInputStream {
 	public int readTag() throws IOException {
 		// Tag tag = null;
 		byte b = (byte) this.read();
-	
 
 		tagClass = (b & Tag.CLASS_MASK) >> 6;
 		pCBit = (b & Tag.PC_MASK) >> 5;
@@ -126,12 +125,12 @@ public class AsnInputStream extends FilterInputStream {
 	 * @throws IOException
 	 */
 	public boolean readBoolean() throws AsnException, IOException {
-		int tagValue = this.readTag();
-
-		if (tagValue != Tag.BOOLEAN) {
-			throw new AsnException("Tag doesn't represent Boolean. Tag Class " + this.tagClass + " P/C flag "
-					+ this.pCBit + " Tag Value " + tagValue);
-		}
+//		int tagValue = this.readTag();
+//
+//		if (tagValue != Tag.BOOLEAN) {
+//			throw new AsnException("Tag doesn't represent Boolean. Tag Class " + this.tagClass + " P/C flag "
+//					+ this.pCBit + " Tag Value " + tagValue);
+//		}
 		byte temp;
 
 		int length = readLength();
@@ -153,12 +152,12 @@ public class AsnInputStream extends FilterInputStream {
 	 */
 	public long readInteger() throws AsnException, IOException {
 
-		int tagValue = this.readTag();
-
-		if (tagValue != Tag.INTEGER) {
-			throw new AsnException("Tag doesn't represent Integer. Tag Class " + this.tagClass + " P/C flag "
-					+ this.pCBit + " Tag Value " + tagValue);
-		}
+		//int tagValue = this.readTag();
+//
+//		if (tagValue != Tag.INTEGER) {
+//			throw new AsnException("Tag doesn't represent Integer. Tag Class " + this.tagClass + " P/C flag "
+//					+ this.pCBit + " Tag Value " + tagValue);
+//		}
 
 		long value = 0;
 		byte temp;
@@ -181,7 +180,7 @@ public class AsnInputStream extends FilterInputStream {
 			temp = (byte) this.read();
 			value = (value << 8) | (0x00FF & temp);
 		}
-
+		
 		return value;
 	}
 

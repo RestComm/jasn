@@ -83,24 +83,40 @@ public class AsnOutputStream extends ByteArrayOutputStream {
 		writeLength(0x00);
 	}
 
-	public void writeInteger(int v) throws IOException {
+	public void writeInteger(int tagClass,int tag,long v) throws IOException 
+	{
 		// TAG
-		this.writeTag(Tag.CLASS_UNIVERSAL, true, Tag.INTEGER);
+		this.writeTag(tagClass, true, tag);
 		// if its positive, we need trailing 0x00
 		boolean wasPositive = v > 0;
 		if (!wasPositive) {
 			v = -v;
 		}
 		// determine how much we should write :)
+		
 		int count = 0;
-		if ((v & 0xFF000000) > 0) {
-			count = 4;
-		} else if ((v & 0x00FF0000) > 0) {
-			count = 3;
-		} else if ((v & 0x0000FF00) > 0) {
-			count = 2;
+		// 0xFF FF FF FF - int boundy, hex can be up to boundry of int
+		if (v < 4294967295l) {
+			if ((v & 0xFF000000) > 0) {
+				count = 4;
+			} else if ((v & 0x00FF0000) > 0) {
+				count = 3;
+			} else if ((v & 0x0000FF00) > 0) {
+				count = 2;
+			} else {
+				count = 1;
+			}
 		} else {
-			count = 1;
+			int tmp = (int) (v >>> 32); //kill zeroz and cast
+			if ((tmp & 0xFF000000) > 0) {
+				count = 8;
+			} else if ((tmp & 0x00FF0000) > 0) {
+				count = 7;
+			} else if ((tmp & 0x0000FF00) > 0) {
+				count = 6;
+			} else {
+				count = 5;
+			}
 		}
 
 		// make the proper val;
@@ -110,10 +126,10 @@ public class AsnOutputStream extends ByteArrayOutputStream {
 		// now we know how much bytes we need from V, for positive with MSB set
 		// on MSB-like octet, we need trailing 0x00, this L+1;
 		// FIXME: change this, tmp hack.
-		ByteBuffer bb = ByteBuffer.allocate(4);
-		bb.putInt(v);
+		ByteBuffer bb = ByteBuffer.allocate(8);
+		bb.putLong(v);
 		bb.flip();
-		for (int c = 4 - count; c > 0; c--) {
+		for (int c = 8 - count; c > 0; c--) {
 			bb.get();
 		}
 		byte[] dataToWrite = new byte[count];
@@ -125,6 +141,10 @@ public class AsnOutputStream extends ByteArrayOutputStream {
 			this.writeLength(dataToWrite.length);
 		}
 		this.write(dataToWrite);
+	}
+	public void writeInteger(long v) throws IOException 
+	{
+		writeInteger(Tag.CLASS_UNIVERSAL,Tag.INTEGER,v);
 	}
 
 	/**
@@ -321,7 +341,7 @@ public class AsnOutputStream extends ByteArrayOutputStream {
 						localBitNum -= 8;
 					}
 				}
-				this.writeStringBinary(bitString, localBitNum, lastBitIndex);
+				this._writeStringBinary(bitString, localBitNum, lastBitIndex,tagClass,tag);
 				lastBitIndex += dataChunkSize * 8;
 				count -= dataChunkSize;
 			}

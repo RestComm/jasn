@@ -44,19 +44,25 @@ public class AsnInputStreamTest extends TestCase {
 		byte[] data = new byte[] { 0x2, 0x1, (byte) 0x80 };
 		ByteArrayInputStream baIs = new ByteArrayInputStream(data);
 		AsnInputStream asnIs = new AsnInputStream(baIs);
-
+		int tag = asnIs.readTag();
+		assertEquals(Tag.INTEGER, tag);
 		long value = asnIs.readInteger();
 
 		assertEquals(-128, value);
 
 		// Test -ve integer -65536
 		byte[] b = this.intToByteArray(-65536);
+		
+		System.err.println(Integer.toBinaryString(-65536));
+		System.err.println("000000000000000"+Integer.toBinaryString(65536));
+		
 
 		data = new byte[] { 0x2, 0x4, b[0], b[1], b[2], b[3] };
 
 		baIs = new ByteArrayInputStream(data);
 		asnIs = new AsnInputStream(baIs);
-
+		tag = asnIs.readTag();
+		assertEquals(Tag.INTEGER, tag);
 		value = asnIs.readInteger();
 
 		assertEquals(-65536, value);
@@ -68,7 +74,8 @@ public class AsnInputStreamTest extends TestCase {
 
 		baIs = new ByteArrayInputStream(data);
 		asnIs = new AsnInputStream(baIs);
-
+		tag = asnIs.readTag();
+		assertEquals(Tag.INTEGER, tag);
 		value = asnIs.readInteger();
 
 		assertEquals(797979, value);
@@ -98,7 +105,7 @@ public class AsnInputStreamTest extends TestCase {
 		BitSet bitSet = new BitSet();
 
 		int tagValue = asnIs.readTag();
-		asnIs.readBitString(bitSet, 0);
+		asnIs.readBitString(bitSet);
 
 		// f0f0f4 is 111100001111000011110100 reduce 02 bits so total length is 22
 		assertEquals(22, bitSet.length());
@@ -146,7 +153,7 @@ public class AsnInputStreamTest extends TestCase {
 		BitSet bitSet = new BitSet();
 		// here we have to explicitly read the Tag
 		int tagValue = asnIs.readTag();
-		asnIs.readBitString(bitSet, 0);
+		asnIs.readBitString(bitSet);
 
 		// f0f0f4 is 111100001111000011110100 reduce 02 bits so total length is 22
 		assertEquals(22, bitSet.length());
@@ -192,7 +199,7 @@ public class AsnInputStreamTest extends TestCase {
 		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 		// here we have to explicitly read the Tag
 		int tagValue = asnIs.readTag();
-		asnIs.readOctetString(byteArrayOutputStream, tagValue);
+		asnIs.readOctetString(byteArrayOutputStream);
 
 		byte[] resultData = byteArrayOutputStream.toByteArray();
 
@@ -216,7 +223,7 @@ public class AsnInputStreamTest extends TestCase {
 		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 		// here we have to explicitly read the Tag
 		int tagValue = asnIs.readTag();
-		asnIs.readOctetString(byteArrayOutputStream, tagValue);
+		asnIs.readOctetString(byteArrayOutputStream);
 
 		byte[] resultData = byteArrayOutputStream.toByteArray();
 
@@ -700,7 +707,7 @@ public class AsnInputStreamTest extends TestCase {
 		long[] actualOID = new long[] { 1, 0, 8571, 2 };
 		ByteArrayInputStream baIs = new ByteArrayInputStream(data);
 		AsnInputStream asnIs = new AsnInputStream(baIs);
-
+		assertEquals(Tag.OBJECT_IDENTIFIER, asnIs.readTag());
 		long[] decodedOID = asnIs.readObjectIdentifier();
 
 		assertEquals(actualOID.length, decodedOID.length);
@@ -715,7 +722,7 @@ public class AsnInputStreamTest extends TestCase {
 		actualOID = new long[] { 1, 2, 840, 113549 };
 		baIs = new ByteArrayInputStream(data);
 		asnIs = new AsnInputStream(baIs);
-
+		assertEquals(Tag.OBJECT_IDENTIFIER, asnIs.readTag());
 		decodedOID = asnIs.readObjectIdentifier();
 
 		assertEquals(actualOID.length, decodedOID.length);
@@ -735,7 +742,7 @@ public class AsnInputStreamTest extends TestCase {
 		ByteArrayInputStream baIs = new ByteArrayInputStream(data);
 		AsnInputStream asnIs = new AsnInputStream(baIs);
 		long[] decoded = asnIs.readObjectIdentifier();
-		System.err.println(Arrays.toString(decoded));
+
 
 	}
 }
