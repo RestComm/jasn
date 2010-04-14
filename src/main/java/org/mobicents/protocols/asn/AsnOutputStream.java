@@ -26,6 +26,10 @@ public class AsnOutputStream extends ByteArrayOutputStream {
 	// some state
 	// private byte length = 0;
 
+	public void writeTag(int tagClass, boolean primitive, long tag) {
+		//FIXME: add this
+		
+	}
 	/**
 	 * Method used to write tags for common types - be it complex or primitive.
 	 * 
@@ -243,18 +247,18 @@ public class AsnOutputStream extends ByteArrayOutputStream {
 		this.write(mantisa);
 
 	}
-
-	public void writeStringOctet(InputStream io) throws AsnException,
-			IOException {
+	public void writeStringOctet(int tagClass, int tag, InputStream io) throws AsnException,
+	IOException {
+		// TODO Auto-generated method stub
 		if (io.available() <= 127) {
 			// its simple :
-			this.writeTag(Tag.CLASS_UNIVERSAL, true, Tag.STRING_OCTET);
+			this.writeTag(tagClass, true, tag);
 			this.writeLength(io.available());
 			byte[] data = new byte[io.available()];
 			io.read(data);
 			this.write(data);
 		} else {
-			this.writeTag(Tag.CLASS_UNIVERSAL, false, Tag.STRING_OCTET);
+			this.writeTag(tagClass, false, tag);
 			// indefinite
 			this.writeLength(0x80);
 			// now lets write fractions, 127 octet chunks
@@ -264,7 +268,7 @@ public class AsnOutputStream extends ByteArrayOutputStream {
 
 				byte[] dataChunk = new byte[count > 127 ? 127 : count];
 				io.read(dataChunk);
-				this.writeString(dataChunk, Tag.STRING_OCTET);
+				this.writeString(dataChunk, tag);
 				count -= dataChunk.length;
 			}
 			// terminate complex
@@ -274,15 +278,19 @@ public class AsnOutputStream extends ByteArrayOutputStream {
 		}
 
 	}
+	public void writeStringOctet(InputStream io) throws AsnException,
+			IOException {
+		this.writeStringOctet(Tag.CLASS_UNIVERSAL,Tag.STRING_OCTET,io);
+	}
 
 	public void writeStringBinary(BitSet bitString) throws AsnException, IOException {
 		//FIXME: find way to write empty bites.?
-		this.writeStringBinary(bitString, Tag.CLASS_UNIVERSAL, Tag.STRING_BIT);
+		this.writeStringBinary(Tag.CLASS_UNIVERSAL, Tag.STRING_BIT,bitString);
 	}
 
-	public void writeStringBinary(BitSet bitString, int tagClass, int tag) throws AsnException, IOException {
+	public void writeStringBinary(int tagClass, int tag,BitSet bitString) throws AsnException, IOException {
 		// DONT USE BitSet.size();
-		_writeStringBinary(bitString, bitString.length(), 0, tagClass, tag);
+		_writeStringBinary(tagClass, tag,bitString, bitString.length(), 0);
 	}
 
 	/**
@@ -295,8 +303,8 @@ public class AsnOutputStream extends ByteArrayOutputStream {
 	 * @throws AsnException
 	 * @throws IOException
 	 */
-	private void _writeStringBinary(BitSet bitString, int bitNumber,
-			int startIndex, int tagClass, int tag) throws AsnException, IOException {
+	private void _writeStringBinary(int tagClass, int tag,BitSet bitString, int bitNumber,
+			int startIndex ) throws AsnException, IOException {
 
 		// check if we can write it in simple form
 		int octetCount = bitNumber / 8;
@@ -341,7 +349,7 @@ public class AsnOutputStream extends ByteArrayOutputStream {
 						localBitNum -= 8;
 					}
 				}
-				this._writeStringBinary(bitString, localBitNum, lastBitIndex,tagClass,tag);
+				this._writeStringBinary(tagClass,tag,bitString, localBitNum, lastBitIndex);
 				lastBitIndex += dataChunkSize * 8;
 				count -= dataChunkSize;
 			}
@@ -498,5 +506,8 @@ public class AsnOutputStream extends ByteArrayOutputStream {
 		this.writeLength(encodedTLV.length);
 		this.write(encodedTLV);
 	}
+
+
+
 
 }

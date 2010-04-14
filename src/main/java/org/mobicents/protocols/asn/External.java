@@ -78,13 +78,15 @@ public class External {
 		try {
 			// external tag has been read, lets read LEN
 			int len = ais.readLength();
-			//if (ais.available() < len) {
-			//	throw new AsnException("Wrong len, not enough data.");
-			//}
-
+			if (ais.available() < len) {
+				throw new AsnException("Wrong len, not enough data.");
+			}
+			
 			// read encode type tag
 			// FIXME: primitive tags...
 			int tag = ais.readTag();
+	
+			
 			// we can have one of
 			if (tag == Tag.OBJECT_IDENTIFIER) {
 
@@ -99,11 +101,12 @@ public class External {
 			} else {
 				throw new AsnException("Unrecognized tag value: "+tag);
 			}
-			
+		
 			//read encoding
 			tag = ais.readTag();
 			len = ais.readLength();
-			
+		
+	
 			if(tag == External._TAG_ASN)
 			{
 				setAsn(true);
