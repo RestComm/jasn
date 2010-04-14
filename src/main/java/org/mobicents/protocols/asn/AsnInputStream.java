@@ -16,7 +16,7 @@ import java.util.BitSet;
  */
 @SuppressWarnings("unused")
 public class AsnInputStream extends FilterInputStream {
-	private int dataReadCount = 0;
+
 	
 	//FIXME: ADD per last LEN reads - to fully support undefined len!
 	private static final String _REAL_BASE10_CHARSET = "US-ASCII";
@@ -37,7 +37,7 @@ public class AsnInputStream extends FilterInputStream {
 		if (i == -1) {
 			throw new EOFException("AsnInputStream has reached the end");
 		}
-		dataReadCount++;
+
 		return i;
 	}
 
@@ -668,21 +668,6 @@ public class AsnInputStream extends FilterInputStream {
 		return data;
 	}
 
-	/* (non-Javadoc)
-	 * @see java.io.FilterInputStream#read(byte[])
-	 */
-	@Override
-	public int read(byte[] b) throws IOException {
-		int x = super.read(b);
-		dataReadCount+=x;
-		return x; 
-	}
-
-	/**
-	 * @return the dataReadCount
-	 */
-	public int getDataReadCount() {
-		return dataReadCount;
-	}
+	
 	
 }
