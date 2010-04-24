@@ -2,7 +2,6 @@ package org.mobicents.protocols.asn;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.util.Arrays;
 import java.util.BitSet;
 
 import junit.framework.TestCase;

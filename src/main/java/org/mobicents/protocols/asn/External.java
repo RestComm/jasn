@@ -3,7 +3,7 @@
  */
 package org.mobicents.protocols.asn;
 
-
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.BitSet;
@@ -14,7 +14,7 @@ import java.util.BitSet;
  * subclass:<br>
  * 
  * <pre>
- * <b>decode(){
+ * &lt;b&gt;decode(){
  *   super.decode();
  *   if(super.getType == requiredType)
  *       this.decode();
@@ -22,34 +22,37 @@ import java.util.BitSet;
  *   {
  *   	//indicate error
  *   }
- *   </b>
+ *   &lt;/b&gt;
  * </pre>
- * 
- * . Also encode/decode methods should be extended
+ *  . Also encode/decode methods should be extended
  * 
  * @author baranowb
+ * @author amit bhayani
  * 
  */
 public class External {
-	//FIXME: makes this proper, it should be kind of universal container....
+	// FIXME: makes this proper, it should be kind of universal container....
 	protected static final int _TAG_EXTERNAL_CLASS = Tag.CLASS_UNIVERSAL; // universal
 	protected static final boolean _TAG_EXTERNAL_PC_PRIMITIVE = false; // isPrimitive
 
 	// ENCODING TYPE
 	protected static final int _TAG_ASN = 0x00;
 	protected static final int _TAG_ASN_CLASS = Tag.CLASS_CONTEXT_SPECIFIC; // context
-																			// spec
+	// spec
 	protected static final boolean _TAG_ASN_PC_PRIMITIVE = false; // isPrimitive
 
 	// in case of Arbitrary and OctetAligned, we dont make decision if its
 	// constructed or primitive, its done for us :)
 	protected static final int _TAG_ARBITRARY = 0x02; // this is bit string
 	protected static final int _TAG_ARBITRARY_CLASS = Tag.CLASS_CONTEXT_SPECIFIC; // context
-																					// spec
+	// spec
 
-	protected static final int _TAG_OCTET_ALIGNED = 0x01; // this is bit string
+	protected static final int _TAG_OCTET_ALIGNED = 0x01; // this is bit
+															// string
 	protected static final int _TAG_OCTET_ALIGNED_CLASS = Tag.CLASS_CONTEXT_SPECIFIC; // context
-																						// spec
+	// spec
+
+	protected static final int _TAG_IMPLICIT_SEQUENCE = 0x08;
 
 	// some state vars
 	// ENCODE TYPE - wtf, ASN is really mind blowing, cmon....
@@ -69,66 +72,78 @@ public class External {
 	private boolean asn = false;
 	private boolean octet = false;
 	private boolean arbitrary = false;
-	
-	//data in binary form for ASN and octet string
+
+	// data in binary form for ASN and octet string
 	private byte[] data;
 	private BitSet bitDataString;
 
 	public void decode(AsnInputStream ais) throws AsnException {
 		try {
-			// external tag has been read, lets read LEN
-			int len = ais.readLength();
-			if (ais.available() < len) {
-				throw new AsnException("Wrong len, not enough data.");
-			}
-			
-			// read encode type tag
-			// FIXME: primitive tags...
-			int tag = ais.readTag();
-	
-			
-			// we can have one of
-			if (tag == Tag.OBJECT_IDENTIFIER) {
 
-				this.oidValue = ais.readObjectIdentifier();
-				this.setOid(true);
+			// The definition of EXTERNAL is
+			//			
+			// EXTERNAL ::= [UNIVERSAL 8] IMPLICIT SEQUENCE {
+			// direct-reference OBJECT IDENTIFIER OPTIONAL,
+			// indirect-reference INTEGER OPTIONAL,
+			// data-value-descriptor ObjectDescriptor OPTIONAL,
+			// encoding CHOICE {
+			// single-ASN1-type [0] ANY,
+			// octet-aligned [1] IMPLICIT OCTET STRING,
+			// arbitrary [2] IMPLICIT BIT STRING }}
+			//
+			//			
 
-			} else if (tag == Tag.INTEGER) {
-				this.indirectReference = ais.readInteger();
-				this.setInteger(true);
-			} else if (tag == Tag.OBJECT_DESCRIPTOR) {
-				throw new AsnException();
-			} else {
-				throw new AsnException("Unrecognized tag value: "+tag);
+			byte[] sequence = ais.readSequence();
+
+			AsnInputStream localAsnIS = new AsnInputStream(
+					new ByteArrayInputStream(sequence));
+			int tag;
+			int len;
+			while (localAsnIS.available() > 0) {
+				tag = localAsnIS.readTag();
+
+				// we can have one of
+				if (tag == Tag.OBJECT_IDENTIFIER) {
+
+					this.oidValue = localAsnIS.readObjectIdentifier();
+					this.setOid(true);
+
+				} else if (tag == Tag.INTEGER) {
+					this.indirectReference = localAsnIS.readInteger();
+					this.setInteger(true);
+				} else if (tag == Tag.OBJECT_DESCRIPTOR) {
+					throw new AsnException();
+				} else {
+					throw new AsnException("Unrecognized tag value: " + tag);
+				}
+
+				// read encoding
+				tag = localAsnIS.readTag();
+				len = localAsnIS.readLength();
+
+				if (tag == External._TAG_ASN) {
+					setAsn(true);
+					// this we dont decode...., we have no idea what is realy
+					// there, might be simple type...
+					// or app specific....
+					data = new byte[len];
+					localAsnIS.read(data);
+
+				} else if (tag == External._TAG_OCTET_ALIGNED) {
+					setOctet(true);
+					ByteArrayOutputStream bos = new ByteArrayOutputStream();
+					localAsnIS.readOctetString(bos);
+					setEncodeType(bos.toByteArray());
+				} else if (tag == External._TAG_ARBITRARY) {
+					setArbitrary(true);
+					this.bitDataString = new BitSet();
+					this.setEncodeBitStringType(this.bitDataString);
+				} else {
+					throw new AsnException();
+				}
+
 			}
-		
-			//read encoding
-			tag = ais.readTag();
-			len = ais.readLength();
-		
-	
-			if(tag == External._TAG_ASN)
-			{
-				setAsn(true);
-				//this we dont decode...., we have no idea what is realy there, might be simple type...
-				//or app specific....
-			}else if(tag == External._TAG_OCTET_ALIGNED)
-			{
-				setOctet(true);
-				ByteArrayOutputStream bos = new ByteArrayOutputStream();
-				ais.readOctetString(bos);
-				setEncodeType(bos.toByteArray());
-			}else if(tag == External._TAG_ARBITRARY)
-			{
-				setArbitrary(true);
-				this.bitDataString = new BitSet();
-				this.setEncodeBitStringType(this.bitDataString);
-			}else
-			{
-				throw new AsnException();
-			}
-			
-			//thats it, after this, subclass should get content TLV
+
 		} catch (IOException e) {
 			throw new AsnException(e);
 		}
@@ -149,12 +164,12 @@ public class External {
 				throw new AsnException();
 			}
 
-			
 			// told, you, mind blowing!
 
 			if (asn) {
 				byte[] childData = getEncodeType();
-				localOutput.writeTag(_TAG_ASN_CLASS, _TAG_ASN_PC_PRIMITIVE, _TAG_ASN);
+				localOutput.writeTag(_TAG_ASN_CLASS, _TAG_ASN_PC_PRIMITIVE,
+						_TAG_ASN);
 				localOutput.writeLength(childData.length);
 				localOutput.write(childData);
 				// childData = localOutput.toByteArray();
@@ -163,18 +178,20 @@ public class External {
 				byte[] childData = getEncodeType();
 				// get child class.... I think its done like that....
 				boolean childConstructor = ((childData[0] & 0x20) >> 5) == Tag.PC_PRIMITIVITE;
-				localOutput.writeTag(_TAG_OCTET_ALIGNED_CLASS, childConstructor, _TAG_OCTET_ALIGNED);
+				localOutput.writeTag(_TAG_OCTET_ALIGNED_CLASS,
+						childConstructor, _TAG_OCTET_ALIGNED);
 				localOutput.writeLength(childData.length);
 				localOutput.write(childData);
 				// childData = localOutput.toByteArray();
 				// localOutput.reset();
 			} else if (arbitrary) {
-				
+
 				AsnOutputStream _bitStrinAos = new AsnOutputStream();
 				_bitStrinAos.writeStringBinary(this.bitDataString);
-				byte[] childData  =  _bitStrinAos.toByteArray();
+				byte[] childData = _bitStrinAos.toByteArray();
 				boolean childConstructor = ((childData[0] & 0x20) >> 5) == Tag.PC_PRIMITIVITE;
-				localOutput.writeTag(_TAG_ARBITRARY_CLASS, childConstructor, _TAG_ARBITRARY);
+				localOutput.writeTag(_TAG_ARBITRARY_CLASS, childConstructor,
+						_TAG_ARBITRARY);
 				localOutput.writeLength(childData.length);
 				localOutput.write(childData);
 				// childData = localOutput.toByteArray();
@@ -184,9 +201,16 @@ public class External {
 			}
 
 			byte[] externalChildData = localOutput.toByteArray();
-			// localOutput.reset();
+
+			// Write the UserInformation Tag and length
 			aos.writeTag(Tag.CLASS_UNIVERSAL, false, Tag.EXTERNAL);
 			aos.writeLength(externalChildData.length);
+
+			// Write the Sequence Tag and length
+			// aos.writeTag(Tag.CLASS_UNIVERSAL, true, Tag.SEQUENCE);
+			// aos.writeLength(externalChildData.length);
+
+			// Write actual Data now
 			aos.write(externalChildData);
 			return;
 		} catch (IOException e) {
@@ -194,25 +218,23 @@ public class External {
 		}
 	}
 
-	public  byte[] getEncodeType() throws AsnException
-	{
+	public byte[] getEncodeType() throws AsnException {
 		return data;
 	}
-	
-	public  void setEncodeType(byte[] data)
-	{
+
+	public void setEncodeType(byte[] data) {
 		this.data = data;
 	}
-	public  BitSet getEncodeBitStringType() throws AsnException
-	{
+
+	public BitSet getEncodeBitStringType() throws AsnException {
 		return (BitSet) bitDataString.clone();
 	}
-	
-	public  void setEncodeBitStringType(BitSet data)
-	{
+
+	public void setEncodeBitStringType(BitSet data) {
 		this.bitDataString = data;
 		this.setArbitrary(true);
 	}
+
 	/**
 	 * @return the oid
 	 */
