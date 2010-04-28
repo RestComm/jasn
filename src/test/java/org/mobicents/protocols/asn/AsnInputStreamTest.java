@@ -37,6 +37,23 @@ public class AsnInputStreamTest extends TestCase {
 	}
 
 	@Test
+	public void testReadIndefinite() throws Exception {
+		byte[] data = new byte[] { (byte)0x80, (byte)0x80, 0x09, (byte)0x96, 0x02, 0x24, (byte)0x80,
+				0x03, 0x00, (byte)0x80, 0x00, (byte)0xf2, (byte)0x81, 0x07, (byte)0x91, 0x13, 0x26,
+				(byte)0x98, (byte)0x86, 0x03, (byte)0xf0, 0x00, 0x00 };
+		
+		ByteArrayInputStream baIs = new ByteArrayInputStream(data);
+		AsnInputStream asnIs = new AsnInputStream(baIs);
+		
+		int length = asnIs.readLength();
+		
+		byte[] indefiniteData = asnIs.readIndefinite();
+		
+		assertTrue(20 == indefiniteData.length);
+
+	}
+
+	@Test
 	public void testInteger() throws Exception {
 
 		// Test -ve integer -128
@@ -51,10 +68,9 @@ public class AsnInputStreamTest extends TestCase {
 
 		// Test -ve integer -65536
 		byte[] b = this.intToByteArray(-65536);
-		
+
 		System.err.println(Integer.toBinaryString(-65536));
-		System.err.println("000000000000000"+Integer.toBinaryString(65536));
-		
+		System.err.println("000000000000000" + Integer.toBinaryString(65536));
 
 		data = new byte[] { 0x2, 0x4, b[0], b[1], b[2], b[3] };
 
@@ -96,7 +112,8 @@ public class AsnInputStreamTest extends TestCase {
 
 	@Test
 	public void testBitStringPrimitive() throws Exception {
-		byte[] data = new byte[] { 0x03, 0x04, 0x02, (byte) 0xF0, (byte) 0xF0, (byte) 0xF4 };
+		byte[] data = new byte[] { 0x03, 0x04, 0x02, (byte) 0xF0, (byte) 0xF0,
+				(byte) 0xF4 };
 
 		ByteArrayInputStream baIs = new ByteArrayInputStream(data);
 		AsnInputStream asnIs = new AsnInputStream(baIs);
@@ -106,7 +123,8 @@ public class AsnInputStreamTest extends TestCase {
 		int tagValue = asnIs.readTag();
 		asnIs.readBitString(bitSet);
 
-		// f0f0f4 is 111100001111000011110100 reduce 02 bits so total length is 22
+		// f0f0f4 is 111100001111000011110100 reduce 02 bits so total length is
+		// 22
 		assertEquals(22, bitSet.length());
 		assertTrue(bitSet.get(0));
 		assertTrue(bitSet.get(1));
@@ -141,8 +159,8 @@ public class AsnInputStreamTest extends TestCase {
 
 	@Test
 	public void testBitStringConstructed() throws Exception {
-		byte[] data = new byte[] { 0x23, (byte) 0x80, 0x03, 0x03, 0x00, (byte) 0xF0, (byte) 0xF0, 0x03, 0x02, 0x02,
-				(byte) 0xF4, 0x00 };
+		byte[] data = new byte[] { 0x23, (byte) 0x80, 0x03, 0x03, 0x00,
+				(byte) 0xF0, (byte) 0xF0, 0x03, 0x02, 0x02, (byte) 0xF4, 0x00 };
 
 		byte[] octetString = new byte[] { (byte) 0xF0, (byte) 0xF0, (byte) 0xF4 };
 
@@ -154,7 +172,8 @@ public class AsnInputStreamTest extends TestCase {
 		int tagValue = asnIs.readTag();
 		asnIs.readBitString(bitSet);
 
-		// f0f0f4 is 111100001111000011110100 reduce 02 bits so total length is 22
+		// f0f0f4 is 111100001111000011110100 reduce 02 bits so total length is
+		// 22
 		assertEquals(22, bitSet.length());
 		assertTrue(bitSet.get(0));
 		assertTrue(bitSet.get(1));
@@ -189,8 +208,9 @@ public class AsnInputStreamTest extends TestCase {
 
 	@Test
 	public void testOctetStringPrimitive() throws Exception {
-		byte[] data = new byte[] { 0x4, 0x10, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, (byte) 0x88, (byte) 0x99,
-				(byte) 0xAA, (byte) 0xBB, (byte) 0XCC, (byte) 0xDD, (byte) 0xEE, (byte) 0xFF };
+		byte[] data = new byte[] { 0x4, 0x10, 0x00, 0x11, 0x22, 0x33, 0x44,
+				0x55, 0x66, 0x77, (byte) 0x88, (byte) 0x99, (byte) 0xAA,
+				(byte) 0xBB, (byte) 0XCC, (byte) 0xDD, (byte) 0xEE, (byte) 0xFF };
 
 		ByteArrayInputStream baIs = new ByteArrayInputStream(data);
 		AsnInputStream asnIs = new AsnInputStream(baIs);
@@ -209,12 +229,14 @@ public class AsnInputStreamTest extends TestCase {
 
 	@Test
 	public void testOctetStringConstructed() throws Exception {
-		byte[] data = new byte[] { 0x24, (byte) 0x80, 0x04, 0x08, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x04,
-				0x08, (byte) 0x88, (byte) 0x99, (byte) 0xAA, (byte) 0xBB, (byte) 0XCC, (byte) 0xDD, (byte) 0xEE,
-				(byte) 0xFF, 0x00 };
+		byte[] data = new byte[] { 0x24, (byte) 0x80, 0x04, 0x08, 0x00, 0x11,
+				0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x04, 0x08, (byte) 0x88,
+				(byte) 0x99, (byte) 0xAA, (byte) 0xBB, (byte) 0XCC,
+				(byte) 0xDD, (byte) 0xEE, (byte) 0xFF, 0x00 };
 
-		byte[] octetString = new byte[] { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, (byte) 0x88, (byte) 0x99,
-				(byte) 0xAA, (byte) 0xBB, (byte) 0XCC, (byte) 0xDD, (byte) 0xEE, (byte) 0xFF };
+		byte[] octetString = new byte[] { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55,
+				0x66, 0x77, (byte) 0x88, (byte) 0x99, (byte) 0xAA, (byte) 0xBB,
+				(byte) 0XCC, (byte) 0xDD, (byte) 0xEE, (byte) 0xFF };
 
 		ByteArrayInputStream baIs = new ByteArrayInputStream(data);
 		AsnInputStream asnIs = new AsnInputStream(baIs);
@@ -238,11 +260,15 @@ public class AsnInputStreamTest extends TestCase {
 		// 118.625
 		byte[] binary1 = new byte[] {
 		// TAG;
-				(Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5) | Tag.REAL,
+				(Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5)
+						| Tag.REAL,
 				// Length - this is definite - we dont handle more? do we?
 				0x0A,// 1(info bits) 2(exponent 7(mantisa)
 				// info bits (binary,sign,BB,FF,EE)
-				(byte) (0x80 | (0x0 << 6) | 0x00 << 4 | 0x01), // 1 0 00(base2) 00(scale = 0) 01 ( two octets for
+				(byte) (0x80 | (0x0 << 6) | 0x00 << 4 | 0x01), // 1 0 00(base2)
+																// 00(scale = 0)
+																// 01 ( two
+																// octets for
 				// exponent
 				// exponent, two octets
 				// 100 00000101
@@ -264,12 +290,16 @@ public class AsnInputStreamTest extends TestCase {
 		// -118.625
 		byte[] binary2 = new byte[] {
 		// TAG;
-				(Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5) | Tag.REAL,
+				(Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5)
+						| Tag.REAL,
 				// Length - this is definite - we dont handle more? do we?
 				0x0A,// 1(info bits) 2(exponent 7(mantisa)
 				// info bits (binary,sign,BB,FF,EE)
-				(byte) (0x80 | (0x1 << 6) | 0x00 << 4 | 0x01), // 1 0 00(base2) 00(scale = 0) 01 ( two octets for
-																// exponent
+				(byte) (0x80 | (0x1 << 6) | 0x00 << 4 | 0x01), // 1 0 00(base2)
+																// 00(scale = 0)
+																// 01 ( two
+																// octets for
+				// exponent
 				// exponent, two octets
 				// 100 00000101
 				0x04, 0x05,
@@ -293,17 +323,20 @@ public class AsnInputStreamTest extends TestCase {
 	@Test
 	public void testRealBase10() throws Exception {
 		// TODO get real data trace?
-		String[] digs = new String[] { "   0004902", "  +0004902", " -4902", "4902.00", "4902.", ".5", " 0.3E-04",
-				"-2.8E+000000", "   000004.50000E123456789", "+5.6e+03", "+0.56E+4" };
+		String[] digs = new String[] { "   0004902", "  +0004902", " -4902",
+				"4902.00", "4902.", ".5", " 0.3E-04", "-2.8E+000000",
+				"   000004.50000E123456789", "+5.6e+03", "+0.56E+4" };
 
 		for (int index = 0; index < digs.length; index++) {
 			double d = Double.parseDouble(digs[index]);
 			ByteArrayOutputStream bos = new ByteArrayOutputStream(20);
 			// write tag
-			bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5) | Tag.REAL);
+			bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5)
+					| Tag.REAL);
 			// length is unknown for a bit, lets do the math
 			byte[] data = digs[index].getBytes("US-ASCII");
-			bos.write(1 + data.length); // 1 for 2 bits for base10 indicator and 6 bits for NR
+			bos.write(1 + data.length); // 1 for 2 bits for base10 indicator and
+										// 6 bits for NR
 			int NR = 0; // for now it is ignored
 
 			if (index <= 2) {
@@ -335,12 +368,14 @@ public class AsnInputStreamTest extends TestCase {
 	public void testIA5StringDefiniteShort() throws Exception {
 		// ACEace$}
 		String dataString = "ACEace$}";
-		byte[] data = new byte[] { 0x41, 0x43, 0x45, 0x61, 0x63, 0x65, 0x24, 0x7D
+		byte[] data = new byte[] { 0x41, 0x43, 0x45, 0x61, 0x63, 0x65, 0x24,
+				0x7D
 
 		};
 		ByteArrayOutputStream bos = new ByteArrayOutputStream(10);
 		// write tag
-		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5) | Tag.STRING_IA5);
+		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5)
+				| Tag.STRING_IA5);
 		bos.write(data.length);
 		bos.write(data);
 
@@ -361,7 +396,8 @@ public class AsnInputStreamTest extends TestCase {
 		// ACEace$}
 		String dataString = "ACEace$}";
 		String resultString = dataString + dataString + dataString + dataString;
-		byte[] data = new byte[] { 0x41, 0x43, 0x45, 0x61, 0x63, 0x65, 0x24, 0x7D
+		byte[] data = new byte[] { 0x41, 0x43, 0x45, 0x61, 0x63, 0x65, 0x24,
+				0x7D
 
 		};
 
@@ -370,16 +406,20 @@ public class AsnInputStreamTest extends TestCase {
 
 		ByteArrayOutputStream bos = new ByteArrayOutputStream(10);
 		// write tag
-		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_CONSTRUCTED << 5) | Tag.STRING_IA5);
+		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_CONSTRUCTED << 5)
+				| Tag.STRING_IA5);
 		bos.write(0x80); // idefinite length
-		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_CONSTRUCTED << 5) | Tag.STRING_IA5);
+		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_CONSTRUCTED << 5)
+				| Tag.STRING_IA5);
 		bos.write(0x80); // idefinite length
 
 		// now first two data
-		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5) | Tag.STRING_IA5);
+		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5)
+				| Tag.STRING_IA5);
 		bos.write(data.length); // definite length
 		bos.write(data);
-		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5) | Tag.STRING_IA5);
+		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5)
+				| Tag.STRING_IA5);
 		bos.write(data.length); // definite length
 		bos.write(data);
 
@@ -388,10 +428,12 @@ public class AsnInputStreamTest extends TestCase {
 		bos.write(Tag.NULL_VALUE);
 
 		// add second set of data
-		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5) | Tag.STRING_IA5);
+		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5)
+				| Tag.STRING_IA5);
 		bos.write(data.length); // definite length
 		bos.write(data);
-		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5) | Tag.STRING_IA5);
+		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5)
+				| Tag.STRING_IA5);
 		bos.write(data.length); // definite length
 		bos.write(data);
 
@@ -415,7 +457,8 @@ public class AsnInputStreamTest extends TestCase {
 		// ACEace$}
 		String dataString = "ACEace$}";
 		String resultString = dataString + dataString + dataString + dataString;
-		byte[] data = new byte[] { 0x41, 0x43, 0x45, 0x61, 0x63, 0x65, 0x24, 0x7D
+		byte[] data = new byte[] { 0x41, 0x43, 0x45, 0x61, 0x63, 0x65, 0x24,
+				0x7D
 
 		};
 
@@ -424,20 +467,25 @@ public class AsnInputStreamTest extends TestCase {
 
 		ByteArrayOutputStream bos = new ByteArrayOutputStream(10);
 		// write tag
-		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_CONSTRUCTED << 5) | Tag.STRING_IA5);
+		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_CONSTRUCTED << 5)
+				| Tag.STRING_IA5);
 		bos.write(0x80); // idefinite length
 		// now first data
-		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5) | Tag.STRING_IA5);
+		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5)
+				| Tag.STRING_IA5);
 		bos.write(data.length); // definite length
 		bos.write(data);
 
 		// add middle complex
-		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_CONSTRUCTED << 5) | Tag.STRING_IA5);
+		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_CONSTRUCTED << 5)
+				| Tag.STRING_IA5);
 		bos.write(0x80); // idefinite length
-		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5) | Tag.STRING_IA5);
+		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5)
+				| Tag.STRING_IA5);
 		bos.write(data.length); // definite length
 		bos.write(data);
-		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5) | Tag.STRING_IA5);
+		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5)
+				| Tag.STRING_IA5);
 		bos.write(data.length); // definite length
 		bos.write(data);
 		// add null
@@ -445,7 +493,8 @@ public class AsnInputStreamTest extends TestCase {
 		bos.write(Tag.NULL_VALUE);
 
 		// add second set of data
-		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5) | Tag.STRING_IA5);
+		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5)
+				| Tag.STRING_IA5);
 		bos.write(data.length); // definite length
 		bos.write(data);
 		// add null
@@ -469,7 +518,8 @@ public class AsnInputStreamTest extends TestCase {
 		// ACEace$}
 		String dataString = "ACEace$}";
 		String resultString = dataString + dataString + dataString + dataString;
-		byte[] data = new byte[] { 0x41, 0x43, 0x45, 0x61, 0x63, 0x65, 0x24, 0x7D
+		byte[] data = new byte[] { 0x41, 0x43, 0x45, 0x61, 0x63, 0x65, 0x24,
+				0x7D
 
 		};
 
@@ -478,24 +528,30 @@ public class AsnInputStreamTest extends TestCase {
 
 		ByteArrayOutputStream bos = new ByteArrayOutputStream(10);
 		// write tag
-		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_CONSTRUCTED << 5) | Tag.STRING_IA5);
+		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_CONSTRUCTED << 5)
+				| Tag.STRING_IA5);
 		bos.write(0x80); // idefinite length
-		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_CONSTRUCTED << 5) | Tag.STRING_IA5);
+		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_CONSTRUCTED << 5)
+				| Tag.STRING_IA5);
 		bos.write(0x80); // idefinite length
 
 		// now first two data
-		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5) | Tag.STRING_IA5);
+		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5)
+				| Tag.STRING_IA5);
 		bos.write(data.length); // definite length
 		bos.write(data);
-		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5) | Tag.STRING_IA5);
+		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5)
+				| Tag.STRING_IA5);
 		bos.write(data.length); // definite length
 		bos.write(data);
 
 		// add second set of data
-		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5) | Tag.STRING_IA5);
+		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5)
+				| Tag.STRING_IA5);
 		bos.write(data.length); // definite length
 		bos.write(data);
-		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5) | Tag.STRING_IA5);
+		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5)
+				| Tag.STRING_IA5);
 		bos.write(data.length); // definite length
 		bos.write(data);
 		// add null
@@ -525,7 +581,8 @@ public class AsnInputStreamTest extends TestCase {
 		byte[] data = dataString.getBytes(BERStatics.STRING_UTF8_ENCODING);
 		ByteArrayOutputStream bos = new ByteArrayOutputStream(10);
 		// write tag
-		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5) | Tag.STRING_UTF8);
+		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5)
+				| Tag.STRING_UTF8);
 		bos.write(data.length);
 		bos.write(data);
 
@@ -553,16 +610,20 @@ public class AsnInputStreamTest extends TestCase {
 
 		ByteArrayOutputStream bos = new ByteArrayOutputStream(10);
 		// write tag
-		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_CONSTRUCTED << 5) | Tag.STRING_UTF8);
+		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_CONSTRUCTED << 5)
+				| Tag.STRING_UTF8);
 		bos.write(0x80); // idefinite length
-		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_CONSTRUCTED << 5) | Tag.STRING_UTF8);
+		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_CONSTRUCTED << 5)
+				| Tag.STRING_UTF8);
 		bos.write(0x80); // idefinite length
 
 		// now first two data
-		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5) | Tag.STRING_UTF8);
+		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5)
+				| Tag.STRING_UTF8);
 		bos.write(data.length); // definite length
 		bos.write(data);
-		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5) | Tag.STRING_UTF8);
+		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5)
+				| Tag.STRING_UTF8);
 		bos.write(data.length); // definite length
 		bos.write(data);
 
@@ -571,10 +632,12 @@ public class AsnInputStreamTest extends TestCase {
 		bos.write(Tag.NULL_VALUE);
 
 		// add second set of data
-		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5) | Tag.STRING_UTF8);
+		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5)
+				| Tag.STRING_UTF8);
 		bos.write(data.length); // definite length
 		bos.write(data);
-		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5) | Tag.STRING_UTF8);
+		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5)
+				| Tag.STRING_UTF8);
 		bos.write(data.length); // definite length
 		bos.write(data);
 
@@ -606,20 +669,25 @@ public class AsnInputStreamTest extends TestCase {
 
 		ByteArrayOutputStream bos = new ByteArrayOutputStream(10);
 		// write tag
-		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_CONSTRUCTED << 5) | Tag.STRING_UTF8);
+		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_CONSTRUCTED << 5)
+				| Tag.STRING_UTF8);
 		bos.write(0x80); // idefinite length
 		// now first data
-		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5) | Tag.STRING_UTF8);
+		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5)
+				| Tag.STRING_UTF8);
 		bos.write(data.length); // definite length
 		bos.write(data);
 
 		// add middle complex
-		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_CONSTRUCTED << 5) | Tag.STRING_UTF8);
+		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_CONSTRUCTED << 5)
+				| Tag.STRING_UTF8);
 		bos.write(0x80); // idefinite length
-		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5) | Tag.STRING_UTF8);
+		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5)
+				| Tag.STRING_UTF8);
 		bos.write(data.length); // definite length
 		bos.write(data);
-		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5) | Tag.STRING_UTF8);
+		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5)
+				| Tag.STRING_UTF8);
 		bos.write(data.length); // definite length
 		bos.write(data);
 		// add null
@@ -627,7 +695,8 @@ public class AsnInputStreamTest extends TestCase {
 		bos.write(Tag.NULL_VALUE);
 
 		// add second set of data
-		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5) | Tag.STRING_UTF8);
+		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5)
+				| Tag.STRING_UTF8);
 		bos.write(data.length); // definite length
 		bos.write(data);
 		// add null
@@ -658,24 +727,30 @@ public class AsnInputStreamTest extends TestCase {
 
 		ByteArrayOutputStream bos = new ByteArrayOutputStream(10);
 		// write tag
-		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_CONSTRUCTED << 5) | Tag.STRING_UTF8);
+		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_CONSTRUCTED << 5)
+				| Tag.STRING_UTF8);
 		bos.write(0x80); // idefinite length
-		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_CONSTRUCTED << 5) | Tag.STRING_UTF8);
+		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_CONSTRUCTED << 5)
+				| Tag.STRING_UTF8);
 		bos.write(0x80); // idefinite length
 
 		// now first two data
-		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5) | Tag.STRING_UTF8);
+		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5)
+				| Tag.STRING_UTF8);
 		bos.write(data.length); // definite length
 		bos.write(data);
-		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5) | Tag.STRING_UTF8);
+		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5)
+				| Tag.STRING_UTF8);
 		bos.write(data.length); // definite length
 		bos.write(data);
 
 		// add second set of data
-		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5) | Tag.STRING_UTF8);
+		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5)
+				| Tag.STRING_UTF8);
 		bos.write(data.length); // definite length
 		bos.write(data);
-		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5) | Tag.STRING_UTF8);
+		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5)
+				| Tag.STRING_UTF8);
 		bos.write(data.length); // definite length
 		bos.write(data);
 		// add null
@@ -701,7 +776,8 @@ public class AsnInputStreamTest extends TestCase {
 	@Test
 	public void testObjectIdentifiers() throws Exception {
 		// Test {iso(1) standard(0) 8571 abstract-syntax(2)}
-		byte[] data = new byte[] { 0x6, 0x4, 0x28, (byte) 0xC2, (byte) 0x7B, 0x02 };
+		byte[] data = new byte[] { 0x6, 0x4, 0x28, (byte) 0xC2, (byte) 0x7B,
+				0x02 };
 
 		long[] actualOID = new long[] { 1, 0, 8571, 2 };
 		ByteArrayInputStream baIs = new ByteArrayInputStream(data);
@@ -716,7 +792,8 @@ public class AsnInputStreamTest extends TestCase {
 		}
 
 		// Test { iso(1) member-body(2) 840 113549 }
-		data = new byte[] { 0x6, 0x6, 0x2A, (byte) 0x86, (byte) 0x48, (byte) 0x86, (byte) 0xF7, 0x0D };
+		data = new byte[] { 0x6, 0x6, 0x2A, (byte) 0x86, (byte) 0x48,
+				(byte) 0x86, (byte) 0xF7, 0x0D };
 
 		actualOID = new long[] { 1, 2, 840, 113549 };
 		baIs = new ByteArrayInputStream(data);
@@ -731,17 +808,17 @@ public class AsnInputStreamTest extends TestCase {
 		}
 
 	}
-	
+
 	@Test
 	public void testObjectIdentifiers2() throws Exception {
 		// Test {iso(1) standard(0) 8571 abstract-syntax(2)}
-		byte[] data = new byte[] { 0x6, 0x7, 0x00, 0x11, (byte) 0x86, 0x05,0x01,0x02,0x01};
+		byte[] data = new byte[] { 0x6, 0x7, 0x00, 0x11, (byte) 0x86, 0x05,
+				0x01, 0x02, 0x01 };
 
-		
 		ByteArrayInputStream baIs = new ByteArrayInputStream(data);
 		AsnInputStream asnIs = new AsnInputStream(baIs);
 		long[] decoded = asnIs.readObjectIdentifier();
 
-
 	}
+
 }
