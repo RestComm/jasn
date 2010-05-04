@@ -68,10 +68,33 @@ public class AsnOutputStream extends ByteArrayOutputStream {
 	 * 
 	 * @param l
 	 */
-	public void writeLength(int l) {
-		this.write(l & 0xFF);
+	public void writeLength(int v) {
+		if(v>0x7F)
+		{
+			//long form
+			if ((v & 0xFF000000) > 0) {
+				count = 4;
+			} else if ((v & 0x00FF0000) > 0) {
+				count = 3;
+			} else if ((v & 0x0000FF00) > 0) {
+				count = 2;
+			} else {
+				count = 1;
+			}
+			this.write(count | 0x80);
+			this.write((byte)(v>>24));
+			this.write((byte)(v>>16));
+			this.write((byte)(v>>8));
+			this.write((byte)(v));
+			
+			
+			
+		}else
+		{	//short
+			this.write(v & 0xFF);
+		}
 
-		// TODO : Long form?
+		
 	}
 
 	public void writeBoolean(boolean value) {
