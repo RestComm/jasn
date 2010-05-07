@@ -71,6 +71,8 @@ public class AsnOutputStream extends ByteArrayOutputStream {
 	public void writeLength(int v) {
 		if(v>0x7F)
 		{
+			//XXX: note there is super.count !!!
+			int count;
 			//long form
 			if ((v & 0xFF000000) > 0) {
 				count = 4;
@@ -81,6 +83,7 @@ public class AsnOutputStream extends ByteArrayOutputStream {
 			} else {
 				count = 1;
 			}
+			//FIXME: this is WRONG
 			this.write(count | 0x80);
 			this.write((byte)(v>>24));
 			this.write((byte)(v>>16));
@@ -153,6 +156,7 @@ public class AsnOutputStream extends ByteArrayOutputStream {
 		// now we know how much bytes we need from V, for positive with MSB set
 		// on MSB-like octet, we need trailing 0x00, this L+1;
 		// FIXME: change this, tmp hack.
+		// FIXME: this is possibly wrong, also use BB.get(byte[],offst,len)
 		ByteBuffer bb = ByteBuffer.allocate(8);
 		bb.putLong(v);
 		bb.flip();
