@@ -67,8 +67,9 @@ public class AsnOutputStream extends ByteArrayOutputStream {
 	 * Writes length in simple or indefinite form
 	 * 
 	 * @param l
+	 * @throws IOException 
 	 */
-	public void writeLength(int v) {
+	public void writeLength(int v) throws IOException {
 		if(v>0x7F)
 		{
 			//XXX: note there is super.count !!!
@@ -83,12 +84,19 @@ public class AsnOutputStream extends ByteArrayOutputStream {
 			} else {
 				count = 1;
 			}
-			//FIXME: this is WRONG
 			this.write(count | 0x80);
-			this.write((byte)(v>>24));
-			this.write((byte)(v>>16));
-			this.write((byte)(v>>8));
-			this.write((byte)(v));
+			// now we know how much bytes we need from V, for positive with MSB set
+			// on MSB-like octet, we need trailing 0x00, this L+1;
+			// FIXME: change this, tmp hack.
+			ByteBuffer bb = ByteBuffer.allocate(4);
+			bb.putInt(v);
+			bb.flip();
+			for (int c = 4 - count; c > 0; c--) {
+				bb.get();
+			}
+			byte[] dataToWrite = new byte[count];
+			bb.get(dataToWrite);
+			this.write(dataToWrite);
 			
 			
 			
@@ -100,7 +108,7 @@ public class AsnOutputStream extends ByteArrayOutputStream {
 		
 	}
 
-	public void writeBoolean(boolean value) {
+	public void writeBoolean(boolean value) throws IOException {
 		writeTag(Tag.CLASS_UNIVERSAL, true, Tag.BOOLEAN);
 		writeLength(0x01);
 
@@ -108,7 +116,7 @@ public class AsnOutputStream extends ByteArrayOutputStream {
 		this.write(V);
 	}
 
-	public void writeNULL() {
+	public void writeNULL() throws IOException {
 		writeTag(Tag.CLASS_UNIVERSAL, true, Tag.NULL);
 		writeLength(0x00);
 	}
@@ -493,7 +501,7 @@ public class AsnOutputStream extends ByteArrayOutputStream {
 		return i;
 	}
 
-	public void writeObjectIdentifier(long[] oidLeafs) {
+	public void writeObjectIdentifier(long[] oidLeafs) throws IOException {
 		if (oidLeafs.length < 2) {
 			writeLength(0);
 			return;
