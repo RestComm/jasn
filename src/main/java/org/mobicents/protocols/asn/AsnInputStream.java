@@ -22,8 +22,8 @@ public class AsnInputStream extends FilterInputStream {
 	private static final int DATA_BUCKET_SIZE = 1024;
 
 	// TODO : There should be getter / setter for these two?
-	private int tagClass = -1;
-	private int pCBit = -1;
+	private int tagClass = 0;
+	private int pCBit = 0;
 	private int tag;
 	private int rawTag;
 
@@ -87,7 +87,7 @@ public class AsnInputStream extends FilterInputStream {
 	}
 
 	public int readLength() throws IOException {
-		int length = -1;
+		int length = 0;
 
 		byte b = (byte) this.read();
 
