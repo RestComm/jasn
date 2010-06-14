@@ -83,13 +83,13 @@
 	</dependencies>
 	<scm>
 		<connection>
-			scm:svn:http://mobicents.googlecode.com/svn/trunk/protocols/asn/asn-1.0.0.BETA1
+			scm:svn:http://mobicents.googlecode.com/svn/trunk/protocols/asn
 		</connection>
 		<developerConnection>
-			scm:svn:http://mobicents.googlecode.com/svn/trunk/protocols/asn/asn-1.0.0.BETA1
+			scm:svn:http://mobicents.googlecode.com/svn/trunk/protocols/asn
 		</developerConnection>
 		<url>
-			scm:svn:http://mobicents.googlecode.com/svn/trunk/protocols/asn/asn-1.0.0.BETA1
+			scm:svn:http://mobicents.googlecode.com/svn/trunk/protocols/asn
 		</url>
 	</scm>
 
