@@ -9,9 +9,9 @@
 
 	<groupId>org.mobicents.protocols.asn</groupId>
 	<artifactId>asn</artifactId>
-	<version>1.0.0.BETA1</version>
+	<version>1.0.0.BETA1-SNAPSHOT</version>
 	<name>Mobicents ASN Impl</name>
-	<url>http://www.mobicents.org/mms/mms-main.html</url>
+	
 	<developers>
 		<developer>
 			<id>oleg.kulikoff</id>
@@ -83,13 +83,13 @@
 	</dependencies>
 	<scm>
 		<connection>
-			scm:svn:https://mobicents.googlecode.com/svn/tags/protocols/asn/asn-1.0.0.BETA1
+			scm:svn:https://mobicents.googlecode.com/svn/trunk/protocols/asn
 		</connection>
 		<developerConnection>
-			scm:svn:https://mobicents.googlecode.com/svn/tags/protocols/asn/asn-1.0.0.BETA1
+			scm:svn:https://mobicents.googlecode.com/svn/trunk/protocols/asn
 		</developerConnection>
 		<url>
-			scm:svn:https://mobicents.googlecode.com/svn/tags/protocols/asn/asn-1.0.0.BETA1
+			http://mobicents.googlecode.com/svn/trunk/protocols/asn
 		</url>
 	</scm>
 
