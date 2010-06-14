@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>org.mobicents</groupId>
 		<artifactId>mobicents-parent</artifactId>
-		<version>2.3</version>
+		<version>2.6</version>
 	</parent>
 
 	<groupId>org.mobicents.protocols.asn</groupId>
@@ -109,7 +109,7 @@
 							</autoVersionSubmodules>
 							<remoteTagging>true</remoteTagging>
 							<tagBase>
-								https://mobicents.googlecode.com/svn/tags/protocols/jain-mgcp
+								https://mobicents.googlecode.com/svn/tags/protocols/asn
 							</tagBase>
 						</configuration>
 					</plugin>
@@ -180,7 +180,8 @@
 			</plugin>
 		</plugins>
 	</build>
-
+	
+	<!-- 
 	<repositories>
 		<repository>
 			<id>jboss</id>
@@ -209,4 +210,5 @@
 			<url>http://repository.jboss.org/maven2</url>
 		</pluginRepository>
 	</pluginRepositories>
+	 -->
 </project>
