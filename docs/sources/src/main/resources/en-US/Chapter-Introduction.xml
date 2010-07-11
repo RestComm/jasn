@@ -7,10 +7,78 @@
 	<title>Introduction
 		to &THIS.PLATFORM;  &THIS.APPLICATION;
 	</title>
-	<!-- POssibly this should go into abstract ? -->
 	<para>
-		TODO
+		<literal> Abstract Syntax Notation One (ASN.1)</literal>
+		is standard for describing data structures in telecommunication and
+		computer networking world.
+		<literal>ASN.1</literal>
+		provides a set of formal rules for describing the structure of
+		objects.
+		Specification describe abstract objects, that are independent
+		of machine-specific encoding techniques.
 	</para>
-	
+	<para>
+		<literal>ASN</literal>
+		defined data can be encoded using on of encoding rules:
+	</para>
+	<itemizedlist>
+		<listitem>
+			<para>Basic Encoding Rules (BER)</para>
+		</listitem>
+		<listitem>
+			<para>Canonical Encoding Rules (CER)</para>
+		</listitem>
+		<listitem>
+			<para>Distinguished Encoding Rules (DER)</para>
+		</listitem>
+		<listitem>
+			<para>XML Encoding Rules (XER)</para>
+		</listitem>
+		<listitem>
+			<para>Packed Encoding Rules (PER)</para>
+		</listitem>
+		<listitem>
+			<para>Generic String Encoding Rules (GSER)</para>
+		</listitem>
+	</itemizedlist>
+	<para>
+		ASN.1 together with specific ASN.1 encoding rules facilitates the
+		exchange of structured data especially between application programs
+		over networks by describing data structures in a way that is
+		independent of machine architecture and implementation language.
+	</para>
+	<para>
+		<literal>ASN</literal>
+		encoded data looks logicaly as follows:
+	</para>
+	<mediaobject id="asn_encoding">
+		<imageobject>
+			<imagedata width="300px" align="center"
+				fileref="images/asn-general-encoding.png" format="PNG" />
+		</imageobject>
+		<caption>
+			<para>ASN encoding logical overview
+			</para>
+		</caption>
+	</mediaobject>
+	<para>Encoded data structure contains three elements:
+	</para>
+	<itemizedlist>
+		<listitem>
+			<para>Tag - unique value, which identifies type of data. Tag carries
+				some additional info - like complexity indicator and context
+				indicator.
+				Actual tag value is unique for single ASN definition(aside some basic tag
+				values which are defined in ASN specification)</para>
+		</listitem>
+		<listitem>
+			<para>Length - indicates length of current data structure </para>
+		</listitem>
+		<listitem>
+			<para>Payload - depending on definition this can be simple value -
+				like integer or it can carry another ASN encoded data structure.
+			</para>
+		</listitem>
 
+	</itemizedlist>
 </chapter>

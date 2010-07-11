@@ -10,15 +10,12 @@
 		<para>Ensure that the following requirements have been met before continuing with the install.</para>
 		<section id="hardware_requirements">
 			<title>Hardware Requirements</title>
-			<para>The Stack doesn't change the &THIS.PLATFORM; Hardware Requirements, however it requires <acronym>SS7</acronym> card.</para>
-			<note>
-				<!-- Is this proper statement ? -->
-				<para>Desired is high performance machine to process voice and data channels.</para>
-			</note>
+			<para>The Library doesn't change the &THIS.PLATFORM; Hardware Requirements.</para>
+			
 		</section>
 		<section id="software_prerequisites">
 			<title>Software Prerequisites</title>
-			<para>The Stack depends on &THIS.PLATFORM; TODO.</para>
+			<para>There are no specific software requirements.</para>
 		</section>
 	</section>	
 	

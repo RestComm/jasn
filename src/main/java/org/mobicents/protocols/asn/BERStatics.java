@@ -45,12 +45,25 @@ public interface BERStatics {
 	 * </ul>
 	 */
 	public static final int REAL_BB_EE_MASK = 0x3;
-	
+	/**
+	 * Value for real encoding in NR1 format
+	 */
 	public static final int REAL_NR1 = 0x1;
+	/**
+	 * Value for real encoding in NR2 format
+	 */
 	public static final int REAL_NR2 = 0x2;
+	/**
+	 * Value for real encoding in NR3 format
+	 */
 	public static final int REAL_NR3 = 0x3;
-	
+	/**
+	 * Name of encoding scheme for java utils in case of IA5
+	 */
 	public static final String STRING_IA5_ENCODING = "US-ASCII";
+	/**
+	 * Name of encoding scheme for java utils in case of UTF8
+	 */
 	public static final String STRING_UTF8_ENCODING = "UTF-8";
-	
+
 }
