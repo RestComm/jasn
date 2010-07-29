@@ -12,7 +12,7 @@
 
 	<artifactId>mobicents-asn-docs</artifactId>
 	<groupId>org.mobicents.protocols.asn.docs</groupId>
-	<version>1.0.0.BETA2</version>
+	<version>1.0.0.BETA3-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
 	<properties>
@@ -71,9 +71,9 @@
 	</profiles>
 
 	<scm>
-		<connection>scm:svn:https://mobicents.googlecode.com/svn/tags/protocols/asn/docs-1.0.0.BETA2</connection>
-		<developerConnection>scm:svn:https://mobicents.googlecode.com/svn/tags/protocols/asn/docs-1.0.0.BETA2</developerConnection>
-		<url>http://mobicents.googlecode.com/svn/tags/protocols/asn/docs-1.0.0.BETA2</url>
+		<connection>scm:svn:https://mobicents.googlecode.com/svn/trunk/protocols/asn</connection>
+		<developerConnection>scm:svn:https://mobicents.googlecode.com/svn/trunk/protocols/asn</developerConnection>
+		<url>http://mobicents.googlecode.com/svn/trunk/protocols/asn</url>
 	</scm>
 
 </project>
