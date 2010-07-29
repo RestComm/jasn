@@ -4,15 +4,14 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
-		<!-- change this, parent must be pom type, not jar as its now -->
-		<artifactId>ss7-parent</artifactId>
-		<groupId>org.mobicents.protocols.ss7</groupId>
-		<version>1.0.0.BETA3</version>
+		<groupId>org.mobicents.protocols.asn</groupId>
+		<artifactId>asn-parent</artifactId>
+		<version>1.0.0.BETA2-SNAPSHOT</version>
 	</parent>
 
 	<artifactId>mobicents-asn-docs</artifactId>
 	<groupId>org.mobicents.protocols.asn.docs</groupId>
-	<version>1.0.0.BETA2-SNAPSHOT</version>
+	
 	<packaging>pom</packaging>
 
 	<properties>
