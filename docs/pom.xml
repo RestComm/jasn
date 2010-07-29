@@ -6,7 +6,7 @@
 	<parent>
 		<groupId>org.mobicents.protocols.asn</groupId>
 		<artifactId>asn-parent</artifactId>
-		<version>1.0.0.BETA2</version>
+		<version>1.0.0.BETA3-SNAPSHOT</version>
 	</parent>
 
 	<artifactId>mobicents-asn-docs</artifactId>
@@ -70,9 +70,9 @@
 	</profiles>
 
 	<scm>
-		<connection>scm:svn:https://mobicents.googlecode.com/svn/tags/protocols/asn/asn-1.0.0.BETA2</connection>
-		<developerConnection>scm:svn:https://mobicents.googlecode.com/svn/tags/protocols/asn/asn-1.0.0.BETA2</developerConnection>
-		<url>http://mobicents.googlecode.com/svn/tags/protocols/asn/asn-1.0.0.BETA2</url>
+		<connection>scm:svn:https://mobicents.googlecode.com/svn/trunk/protocols/asn</connection>
+		<developerConnection>scm:svn:https://mobicents.googlecode.com/svn/trunk/protocols/asn</developerConnection>
+		<url>http://mobicents.googlecode.com/svn/trunk/protocols/asn</url>
 	</scm>
 
 </project>
