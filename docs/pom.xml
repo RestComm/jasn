@@ -8,7 +8,7 @@
 		<!-- change this, parent must be pom type, not jar as its now -->
 		<artifactId>ss7-parent</artifactId>
 		<groupId>org.mobicents.protocols.ss7</groupId>
-		<version>1.0.0.BETA3-SNAPSHOT</version>
+		<version>1.0.0.BETA3</version>
 	</parent>
 
 	<artifactId>mobicents-asn-docs</artifactId>
