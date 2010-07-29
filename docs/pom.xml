@@ -61,7 +61,7 @@
 							<remoteTagging>true</remoteTagging>
 							<autoVersionSubmodules>true</autoVersionSubmodules>
 							<resume>false</resume>
-							<tagBase>https://mobicents.googlecode.com/svn/tags/protocols/asn/docs</tagBase>
+							<tagBase>https://mobicents.googlecode.com/svn/tags/protocols/asn</tagBase>
 							<preparationGoals>clean install</preparationGoals>
 						</configuration>
 					</plugin>
@@ -71,9 +71,9 @@
 	</profiles>
 
 	<scm>
-		<connection>scm:svn:https://mobicents.googlecode.com/svn/trunk/protocols/asn/docs</connection>
-		<developerConnection>scm:svn:https://mobicents.googlecode.com/svn/trunk/protocols/asn/docs</developerConnection>
-		<url>http://mobicents.googlecode.com/svn/trunk/protocols/asn/docs</url>
+		<connection>scm:svn:https://mobicents.googlecode.com/svn/trunk/protocols/asn</connection>
+		<developerConnection>scm:svn:https://mobicents.googlecode.com/svn/trunk/protocols/asn</developerConnection>
+		<url>http://mobicents.googlecode.com/svn/trunk/protocols/asn</url>
 	</scm>
 
 </project>
