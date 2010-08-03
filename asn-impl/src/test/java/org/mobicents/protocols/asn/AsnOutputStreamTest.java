@@ -331,33 +331,33 @@ public class AsnOutputStreamTest extends TestCase {
 	public void testUTF8StringComplex() throws Exception {
 		// actual encoding of this is 80bytes, double == 160
 		//commenting out, it fails on linux
-//		String dataString = "ACEace$} - S�u�by wiedz�, kto zorganizowa� zamachy w metrze.";
-//		dataString += dataString;
-//
-//		byte[] data = dataString.getBytes(BERStatics.STRING_UTF8_ENCODING);
-//		ByteArrayOutputStream bos = new ByteArrayOutputStream(10);
-//		// write tag
-//		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_CONSTRUCTED << 5)
-//				| Tag.STRING_UTF8);
-//		bos.write(0x80);
-//
-//		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5)
-//				| Tag.STRING_UTF8);
-//		bos.write(127);
-//		bos.write(data, 0, 127);
-//		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5)
-//				| Tag.STRING_UTF8);
-//		bos.write(160 - 127);
-//		bos.write(data, 127, 160 - 127);
-//
-//		bos.write(0);
-//		bos.write(0);
-//
-//		byte[] expected = bos.toByteArray();
-//
-//		this.output.writeStringUTF8(dataString);
-//		byte[] encoded = this.output.toByteArray();
-//		compareArrays(expected, encoded);
+		String dataString = "ACEace$} - Sluzby wiedza, kto zorganizowal zamachy w metrze.";
+		dataString += dataString;
+
+		byte[] data = dataString.getBytes(BERStatics.STRING_UTF8_ENCODING);
+		ByteArrayOutputStream bos = new ByteArrayOutputStream(10);
+		// write tag
+		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_CONSTRUCTED << 5)
+				| Tag.STRING_UTF8);
+		bos.write(0x80);
+
+		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5)
+				| Tag.STRING_UTF8);
+		bos.write(127);
+		bos.write(data, 0, 127);
+		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_PRIMITIVITE << 5)
+				| Tag.STRING_UTF8);
+		bos.write(160 - 127);
+		bos.write(data, 127, 160 - 127);
+
+		bos.write(0);
+		bos.write(0);
+
+		byte[] expected = bos.toByteArray();
+
+		this.output.writeStringUTF8(dataString);
+		byte[] encoded = this.output.toByteArray();
+		compareArrays(expected, encoded);
 	}
 
 	@Test
