@@ -332,8 +332,8 @@ public class AsnOutputStreamTest extends TestCase {
 		// actual encoding of this is 80bytes, double == 160
 		//commenting out, it fails on linux
 		String dataString = "ACEace$} - Sluzby wiedza, kto zorganizowal zamachy w metrze.";
-		dataString += dataString;
-
+		dataString += dataString+dataString;
+		dataString = dataString.substring(0,160);
 		byte[] data = dataString.getBytes(BERStatics.STRING_UTF8_ENCODING);
 		ByteArrayOutputStream bos = new ByteArrayOutputStream(10);
 		// write tag
