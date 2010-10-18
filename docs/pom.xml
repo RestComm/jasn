@@ -11,7 +11,7 @@
 
 	<artifactId>mobicents-asn-docs</artifactId>
 	<groupId>org.mobicents.protocols.asn.docs</groupId>
-	
+	<name>Mobicents :: ASN :: Docs :: Parent :: ${pom.artifactId}</name>
 	<packaging>pom</packaging>
 
 	<properties>

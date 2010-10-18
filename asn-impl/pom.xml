@@ -9,7 +9,7 @@
 
 	<groupId>org.mobicents.protocols.asn</groupId>
 	<artifactId>asn</artifactId>
-	<name>Mobicents ASN Impl</name>
+	<name>Mobicents :: ASN :: Impl :: ${pom.artifactId}</name>
 	
 	<developers>
 		<developer>

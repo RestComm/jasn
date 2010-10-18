@@ -10,15 +10,12 @@
 	<groupId>org.mobicents.protocols.asn</groupId>
 	<artifactId>asn-parent</artifactId>
 	<version>1.0.0.BETA3-SNAPSHOT</version>
-	<name>Mobicents ASN Parent</name>
+	<name>Mobicents :: ASN :: Parent :: ${pom.artifactId}</name>
 	<packaging>pom</packaging>
 	
 
 	<properties>
 		<log4j.version>1.2.8</log4j.version>
-		<release.name>
-			${release.name.prefix}${parent.version}${release.name.suffix}
-		</release.name>
 
 		<!-- OTHER MOBICENTS COMPONENTS VERSIONS -->
 		<mobicents.tools.mavenplugin.eclipse.version>
@@ -90,6 +87,7 @@
 			<id>release</id>
 			<modules>
 				<module>docs</module>
+				<module>release</module>
 			</modules>
 			<!-- Add more if required -->
 		</profile>
