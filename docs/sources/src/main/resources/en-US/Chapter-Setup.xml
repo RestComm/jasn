@@ -5,7 +5,7 @@
 
 	<title>Setup</title>
 
-	<section id="preinstall_requirements_and_prerequisites">
+<!--	<section id="preinstall_requirements_and_prerequisites">
 		<title>Pre-Install Requirements and Prerequisites</title>
 		<para>Ensure that the following requirements have been met before continuing with the install.</para>
 		<section id="hardware_requirements">
@@ -17,7 +17,7 @@
 			<title>Software Prerequisites</title>
 			<para>There are no specific software requirements.</para>
 		</section>
-	</section>	
+	</section>--><!--Note: The preinstall requirements section is not needed, as the Library doesn't change any of the standard requirements.-->
 	
 	<section id="source_code">
 		<title>&THIS.PLATFORM;  &THIS.APPLICATION; Source Code</title>

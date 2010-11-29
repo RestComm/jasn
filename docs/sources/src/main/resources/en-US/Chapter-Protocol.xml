@@ -7,9 +7,7 @@
 
 	<section>
 		<title>Supported encoding rules</title>
-		<para>&THIS.PLATFORM; &THIS.APPLICATION;
-			supports following encoding rules:
-		</para>
+		<para>&THIS.PLATFORM; &THIS.APPLICATION; supports following the encoding rules:</para>
 		<itemizedlist>
 			<listitem>
 				<para>BER</para>
@@ -17,46 +15,48 @@
 		</itemizedlist>
 	</section>
 	<section>
-		<title>
-			API
-		</title>
-		<para>&THIS.PLATFORM; &THIS.APPLICATION;
-			is stream oriented. User accesses
-			<literal>ASN</literal>
-			primitives by means of stream objects capable of proper decoding and
-			encoding.
+		<title>API</title>
+		<para>
+    &THIS.PLATFORM; &THIS.APPLICATION; is stream oriented. The user accesses ASN primitives by means of stream objects capable of proper decoding and encoding.
 		</para>
 
-		<para>Following classes deserve explanation:</para>
-		<itemizedlist>
-			<listitem>
-				<para>
-					<literal>org.mobicents.protocols.asn.Tag</literal>
-					- this class defines static values which are part of header(Tag).
-					Example value are tag value for Integer, BitString, etc.
-				</para>
-			</listitem>
-			<listitem>
-				<para>
-					<literal>org.mobicents.protocols.asn.BERStatics</literal>
-					- this class defines some static values which are specific for BER
-					encoding - like real encoding schemes(NR1,NR2...).
-				</para>
-			</listitem>
-			<listitem>
-				<para>
-					<literal>org.mobicents.protocols.asn.External</literal>
-					- this is special class which is used to represent "External" type.
-					Its special ASN type to say "anything" can be used.
-				</para>
-			</listitem>
-			<listitem>
-				<para> Input and output stream - simpel classes which are core of
-					this library. They allow to read/write chunks of data.</para>
-			</listitem>
-
-		</itemizedlist>
-
+		<para>The following classes deserve explanation:</para>
+    <variablelist>
+      <varlistentry>
+        <term><literal>org.mobicents.protocols.asn.Tag</literal></term>
+        <listitem>
+          <para>
+          This class defines static values that are part of header(Tag). Example values are tag values for Integer, BitString, etc.
+          </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><literal>org.mobicents.protocols.asn.BERStatics</literal></term>
+        <listitem>
+          <para>
+          This class defines some static values that are specific for BER
+					encoding, such as real encoding schemes(NR1,NR2...).
+          </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><literal>org.mobicents.protocols.asn.External</literal></term>
+        <listitem>
+          <para>
+          This is a special class that is used to represent the "External" type.
+					It is a special ASN type where "anything" can be used.
+          </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>Input and Output stream</term>
+        <listitem>
+          <para>
+          Simple classes that are the core of this library. They allow for chunks of data to be read/written.
+          </para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
 	</section>
 	<section>
 		<title>Examples</title>
@@ -86,7 +86,7 @@ AsnOutputStream output = new AsnOutputStream();
 output.writeReal(-3145.156d, BERStatics.REAL_NR1);	
 		</programlisting>
 		<para>
-			Complex example how to decode some constructed data structure:
+			Complex example - how to decode some constructed data structure:
 		</para>
 		<programlisting lang="JAVA" role="JAVA">
 

@@ -4,22 +4,12 @@
 
 <chapter id="introduction">
 
-	<title>Introduction
-		to &THIS.PLATFORM;  &THIS.APPLICATION;
-	</title>
+	<title>Introduction to &THIS.PLATFORM; &THIS.APPLICATION;</title>
 	<para>
-		<literal> Abstract Syntax Notation One (ASN.1)</literal>
-		is standard for describing data structures in telecommunication and
-		computer networking world.
-		<literal>ASN.1</literal>
-		provides a set of formal rules for describing the structure of
-		objects.
-		Specification describe abstract objects, that are independent
-		of machine-specific encoding techniques.
+  Abstract Syntax Notation One (ASN.1) is the standard for describing data structures in telecommunication and computer networking world. ASN.1 provides a set of formal rules for describing the structure of objects. The specification describes abstract objects that are independent of machine-specific encoding techniques.
 	</para>
 	<para>
-		<literal>ASN</literal>
-		defined data can be encoded using on of encoding rules:
+  ASN defined data can be encoded using one of these encoding rules:
 	</para>
 	<itemizedlist>
 		<listitem>
@@ -42,43 +32,49 @@
 		</listitem>
 	</itemizedlist>
 	<para>
-		ASN.1 together with specific ASN.1 encoding rules facilitates the
-		exchange of structured data especially between application programs
-		over networks by describing data structures in a way that is
-		independent of machine architecture and implementation language.
+  ASN.1, together with specific ASN.1 encoding rules, facilitates the exchange of structured data between application programs over networks by describing data structures in a way that is independent of machine architecture and implementation language.
 	</para>
 	<para>
-		<literal>ASN</literal>
-		encoded data looks logicaly as follows:
+  ASN encoded data looks logically as follows:
 	</para>
-	<mediaobject id="asn_encoding">
-		<imageobject>
-			<imagedata width="300px" align="center"
-				fileref="images/asn-general-encoding.png" format="PNG" />
-		</imageobject>
-		<caption>
-			<para>ASN encoding logical overview
-			</para>
-		</caption>
-	</mediaobject>
-	<para>Encoded data structure contains three elements:
-	</para>
-	<itemizedlist>
-		<listitem>
-			<para>Tag - unique value, which identifies type of data. Tag carries
-				some additional info - like complexity indicator and context
-				indicator.
-				Actual tag value is unique for single ASN definition(aside some basic tag
-				values which are defined in ASN specification)</para>
-		</listitem>
-		<listitem>
-			<para>Length - indicates length of current data structure </para>
-		</listitem>
-		<listitem>
-			<para>Payload - depending on definition this can be simple value -
-				like integer or it can carry another ASN encoded data structure.
-			</para>
-		</listitem>
+  <figure>
+    <title>ASN encoding logical overview</title>
+    <mediaobject id="asn_encoding">
+      <imageobject>
+        <imagedata width="300px" align="center"
+          fileref="images/asn-general-encoding.png" format="PNG" />
+      </imageobject>
+    </mediaobject>
+  </figure>
+	<para>Encoded data structure contains three elements:</para>
+  <variablelist>
+    <varlistentry>
+      <term>Tag</term>
+      <listitem>
+        <para>
+        Unique value, which identifies the type of data.
+        </para>
+        <para>
+        Tag carries some additional info (such as the complexity and context indicators). The actual Tag value is unique for a single ASN definition (aside from some basic tag values which are defined in the ASN specification).
+        </para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>Length</term>
+      <listitem>
+        <para>
+        Indicates the length of the current data structure.
+        </para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
+      <term>Payload</term>
+      <listitem>
+        <para>
+        Depending on the definition, this can be a simple value (like an integer), or it can carry another ASN encoded data structure.
+        </para>
+      </listitem>
+    </varlistentry>
+  </variablelist>
 
-	</itemizedlist>
 </chapter>

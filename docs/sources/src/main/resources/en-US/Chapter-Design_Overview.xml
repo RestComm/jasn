@@ -5,23 +5,15 @@
 
 	<title>Design Overview</title>
 	<important>
-		<para>Be
-			aware, &THIS.PLATFORM; &THIS.APPLICATION;
-			is subject to changes as it is under active development!
+		<para>
+    &THIS.PLATFORM; &THIS.APPLICATION; is subject to changes as it is under active development.
 		</para>
 	</important>
-	<para>&THIS.PLATFORM; &THIS.APPLICATION;
-		has been designed as simple library which enables user to encode and
-		decode streams according to ASN rules. It provides user with tools to
-		process primitives and build more complex object according to
-		definition in ASN. 
+	<para>
+  &THIS.PLATFORM; &THIS.APPLICATION; has been designed as a simple library that enables the user to encode and decode streams according to ASN rules. It provides the user with the tools to process primitives and build more complex objects as defined in ASN. 
 	</para>
 	<note>
-		<para>&THIS.PLATFORM; &THIS.APPLICATION;
-			does not provide
-			<literal>ASN compiler</literal>
-			. It sole purpose is to avoid costly processing and allow user to
-			implement desired functionality in optimal way.
+		<para>&THIS.PLATFORM; &THIS.APPLICATION; does not provide an <literal>ASN compiler</literal>. Its sole purpose is to avoid costly processing and allow the user to implement the desired functionality in the optimal way.
 		</para>
 	</note>
 	
