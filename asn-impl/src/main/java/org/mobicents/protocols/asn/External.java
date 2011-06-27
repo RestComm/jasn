@@ -77,6 +77,8 @@ public class External {
 	private byte[] data;
 	private BitSet bitDataString;
 
+	//FIXME: ensure structure from file and if it does not allow more than one type of data, enforce that!
+	
 	public void decode(AsnInputStream ais) throws AsnException {
 		try {
 
@@ -138,6 +140,14 @@ public class External {
 					setArbitrary(true);
 					this.bitDataString = new BitSet();
 					this.setEncodeBitStringType(this.bitDataString);
+					tag = localAsnIS.readTag();
+					if(tag != Tag.STRING_BIT)
+					{
+						throw new AsnException("Wrong tag value '"+tag+"' expected '"+Tag.STRING_BIT+"'");
+					}
+					BitSet bitSet = new BitSet();
+					localAsnIS.readBitString(bitSet);
+					this.setEncodeBitStringType(bitSet);
 				} else {
 					throw new AsnException();
 				}
