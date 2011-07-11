@@ -113,23 +113,78 @@ public class AsnOutputStream extends ByteArrayOutputStream {
 		
 	}
 
+
+	/**
+	 * write Boolean with tag and length
+	 * 
+	 * @param value
+	 * @throws IOException
+	 */
 	public void writeBoolean(boolean value) throws IOException {
 		writeTag(Tag.CLASS_UNIVERSAL, true, Tag.BOOLEAN);
 		writeLength(0x01);
+		
+		this.writeBooleanData(value);
+	}
+
+	/**
+	 * write Boolean without tag and length
+	 * 
+	 * @param value
+	 * @throws IOException
+	 */
+	public void writeBooleanData(boolean value) throws IOException {
 
 		int V = value ? _BOOLEAN_POSITIVE : _BOOLEAN_NEGATIVE;
 		this.write(V);
 	}
 
+	/**
+	 * Write NULL with NULL tag and length
+	 * 
+	 * @throws IOException
+	 */
 	public void writeNULL() throws IOException {
 		writeTag(Tag.CLASS_UNIVERSAL, true, Tag.NULL);
 		writeLength(0x00);
+		
+		this.writeNULLData();
 	}
 
-	public void writeInteger(int tagClass,int tag,long v) throws IOException 
-	{
+	/**
+	 * Write NULL without tag and length
+	 * 
+	 * @throws IOException
+	 */
+	public void writeNULLData() throws IOException {
+	}
+
+
+	/**
+	 * Write Integer with tag and length
+	 * 
+	 * @param tagClass
+	 * @param tag
+	 * @param v
+	 * @throws IOException
+	 */
+	public void writeInteger(int tagClass,int tag,long v) throws IOException {
 		// TAG
 		this.writeTag(tagClass, true, tag);
+		this.doWriteInteger(v, true);
+	}
+
+	/**
+	 * Write Integer without tag and length
+	 * 
+	 * @param v
+	 * @throws IOException
+	 */
+	public void writeIntegerData(long v) throws IOException {
+		this.doWriteInteger(v, false);
+	}
+	
+	private void doWriteInteger(long v, boolean writeLength) throws IOException {
 		// if its positive, we need trailing 0x00
 		boolean wasPositive = v > 0;
 		if (!wasPositive) {
@@ -179,10 +234,12 @@ public class AsnOutputStream extends ByteArrayOutputStream {
 		byte[] dataToWrite = new byte[count];
 		bb.get(dataToWrite);
 		if (wasPositive && ((dataToWrite[0] & 0x80) > 0)) {
-			this.writeLength(dataToWrite.length + 1);
+			if (writeLength)
+				this.writeLength(dataToWrite.length + 1);
 			this.write(0x00);
 		} else {
-			this.writeLength(dataToWrite.length);
+			if (writeLength)
+				this.writeLength(dataToWrite.length);
 		}
 		this.write(dataToWrite);
 	}

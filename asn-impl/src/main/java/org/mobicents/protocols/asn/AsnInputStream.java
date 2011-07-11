@@ -129,12 +129,23 @@ public class AsnInputStream extends FilterInputStream {
 
 	/**
 	 * Reads and converts for {@link Tag#BOOLEAN} primitive
+	 * read Boolean with length without tag
 	 * 
 	 * @return
 	 * @throws AsnException
 	 * @throws IOException
 	 */
 	public boolean readBoolean() throws AsnException, IOException {
+		
+		int length = readLength();
+		return this.readBooleanData(length);
+	}
+	
+	/**
+	 * Read Boolean without tag and length (only data)
+	 * 
+	 */
+	public boolean readBooleanData(int length) throws AsnException, IOException {
 		// int tagValue = this.readTag();
 		//
 		// if (tagValue != Tag.BOOLEAN) {
@@ -144,7 +155,6 @@ public class AsnInputStream extends FilterInputStream {
 		// }
 		byte temp;
 
-		int length = readLength();
 		if (length != 1)
 			throw new AsnException("Boolean length should be 1 but is "
 					+ length);
@@ -156,6 +166,7 @@ public class AsnInputStream extends FilterInputStream {
 
 	/**
 	 * Reads and converts for {@link Tag#INTEGER} primitive
+	 * read Integer with length without tag
 	 * 
 	 * @param length
 	 * @return
@@ -163,6 +174,19 @@ public class AsnInputStream extends FilterInputStream {
 	 * @throws IOException
 	 */
 	public long readInteger() throws AsnException, IOException {
+		int length = this.readLength();
+		
+		return this.readIntegerData(length);
+	}
+	
+	/**
+	 * read Integer without length and tag (only data)
+	 * @param length
+	 * @return
+	 * @throws AsnException
+	 * @throws IOException
+	 */
+	public long readIntegerData(int length) throws AsnException, IOException {
 
 		// int tagValue = this.readTag();
 		//
@@ -174,8 +198,6 @@ public class AsnInputStream extends FilterInputStream {
 
 		long value = 0;
 		byte temp;
-
-		int length = this.readLength();
 
 		if (length == -1)
 			throw new AsnException("Length for Integer is -1");
@@ -627,11 +649,20 @@ public class AsnInputStream extends FilterInputStream {
 	/**
 	 * Read and converts(actually does not since its null) for {@link Tag#NULL}
 	 * primitive
+	 * Read NULL with tag and length
 	 */
 	public void readNull() throws AsnException, IOException {
 		int tagValue = this.readTag();
 
 		int length = readLength();
+		this.readNullData(length);
+	}
+
+	/**
+	 * Read NULL without tag and length
+	 * 
+	 */
+	public void readNullData(int length) throws AsnException, IOException {
 		if (length != 0)
 			throw new AsnException("Null length should be 0 but is " + length);
 
