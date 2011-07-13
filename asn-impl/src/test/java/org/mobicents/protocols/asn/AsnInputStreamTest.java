@@ -158,6 +158,54 @@ public class AsnInputStreamTest extends TestCase {
 	}
 
 	@Test
+	public void testBitStringPrimitiveData() throws Exception {
+		byte[] data = new byte[] { 0x03, 0x04, 0x02, (byte) 0xF0, (byte) 0xF0,
+				(byte) 0xF4 };
+
+		ByteArrayInputStream baIs = new ByteArrayInputStream(data);
+		AsnInputStream asnIs = new AsnInputStream(baIs);
+
+		BitSet bitSet = new BitSet();
+
+		int tagValue = asnIs.readTag();
+		int length = asnIs.readLength();
+		asnIs.readBitStringData(bitSet, length, asnIs.isTagPrimitive());
+
+		// f0f0f4 is 111100001111000011110100 reduce 02 bits so total length is
+		// 22
+		assertEquals(22, bitSet.length());
+		assertTrue(bitSet.get(0));
+		assertTrue(bitSet.get(1));
+		assertTrue(bitSet.get(2));
+		assertTrue(bitSet.get(3));
+
+		assertFalse(bitSet.get(4));
+		assertFalse(bitSet.get(5));
+		assertFalse(bitSet.get(6));
+		assertFalse(bitSet.get(7));
+
+		assertTrue(bitSet.get(8));
+		assertTrue(bitSet.get(9));
+		assertTrue(bitSet.get(10));
+		assertTrue(bitSet.get(11));
+
+		assertFalse(bitSet.get(12));
+		assertFalse(bitSet.get(13));
+		assertFalse(bitSet.get(14));
+		assertFalse(bitSet.get(15));
+
+		assertTrue(bitSet.get(16));
+		assertTrue(bitSet.get(17));
+		assertTrue(bitSet.get(18));
+		assertTrue(bitSet.get(19));
+
+		assertFalse(bitSet.get(20));
+
+		assertTrue(bitSet.get(21));
+
+	}
+
+	@Test
 	public void testBitStringConstructed() throws Exception {
 		byte[] data = new byte[] { 0x23, (byte) 0x80, 0x03, 0x03, 0x00,
 				(byte) 0xF0, (byte) 0xF0, 0x03, 0x02, 0x02, (byte) 0xF4, 0x00 };
@@ -219,6 +267,28 @@ public class AsnInputStreamTest extends TestCase {
 		// here we have to explicitly read the Tag
 		int tagValue = asnIs.readTag();
 		asnIs.readOctetString(byteArrayOutputStream);
+
+		byte[] resultData = byteArrayOutputStream.toByteArray();
+
+		for (int i = 0; i < resultData.length; i++) {
+			assertTrue(resultData[i] == data[i + 2]);
+		}
+	}
+
+	@Test
+	public void testOctetStringPrimitiveData() throws Exception {
+		byte[] data = new byte[] { 0x4, 0x10, 0x00, 0x11, 0x22, 0x33, 0x44,
+				0x55, 0x66, 0x77, (byte) 0x88, (byte) 0x99, (byte) 0xAA,
+				(byte) 0xBB, (byte) 0XCC, (byte) 0xDD, (byte) 0xEE, (byte) 0xFF };
+
+		ByteArrayInputStream baIs = new ByteArrayInputStream(data);
+		AsnInputStream asnIs = new AsnInputStream(baIs);
+
+		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+		// here we have to explicitly read the Tag
+		int tagValue = asnIs.readTag();
+		int length = asnIs.readLength();
+		asnIs.readOctetStringData(byteArrayOutputStream, length, asnIs.isTagPrimitive());
 
 		byte[] resultData = byteArrayOutputStream.toByteArray();
 

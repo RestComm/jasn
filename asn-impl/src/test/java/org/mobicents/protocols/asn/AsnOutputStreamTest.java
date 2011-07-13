@@ -253,6 +253,30 @@ public class AsnOutputStreamTest extends TestCase {
 	}
 
 	@Test
+	public void testBinaryStringData_Short() throws Exception {
+		// 11110000 11110000 111101xx //0x0F accoring to book...
+		byte[] expected = new byte[] { 0x02, (byte) 0xF0,
+				(byte) 0xF0, (byte) 0xF4 };
+		BitSet bs = new BitSet();
+		bs.set(0);
+		bs.set(1);
+		bs.set(2);
+		bs.set(3);
+		bs.set(8);
+		bs.set(9);
+		bs.set(10);
+		bs.set(11);
+		bs.set(16);
+		bs.set(17);
+		bs.set(18);
+		bs.set(19);
+		bs.set(21);
+		this.output.writeStringBinaryData(bs);
+		byte[] encoded = this.output.toByteArray();
+		compareArrays(expected, encoded);
+	}
+
+	@Test
 	public void testBinaryString_Complex() throws Exception {
 
 		ByteArrayOutputStream bos = new ByteArrayOutputStream();

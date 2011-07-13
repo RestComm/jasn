@@ -344,8 +344,8 @@ public class AsnOutputStream extends ByteArrayOutputStream {
 		this.write(mantisa);
 
 	}
-	public void writeStringOctet(int tagClass, int tag, InputStream io) throws AsnException,
-	IOException {
+	
+	public void writeStringOctet(int tagClass, int tag, InputStream io) throws AsnException, IOException {
 		// TODO Auto-generated method stub
 		if (io.available() <= 127) {
 			// its simple :
@@ -375,9 +375,22 @@ public class AsnOutputStream extends ByteArrayOutputStream {
 		}
 
 	}
+	
 	public void writeStringOctet(InputStream io) throws AsnException,
 			IOException {
 		this.writeStringOctet(Tag.CLASS_UNIVERSAL,Tag.STRING_OCTET,io);
+	}
+
+	public void writeStringOctetData(InputStream io) throws AsnException, IOException {
+		// TODO Auto-generated method stub
+		if (io.available() <= 127) {
+			// its simple :
+			byte[] data = new byte[io.available()];
+			io.read(data);
+			this.write(data);
+		} else {
+			throw new AsnException("writeStringOctetData does not support octet strings more than 126 bytes length");
+		}
 	}
 
 	public void writeStringBinary(BitSet bitString) throws AsnException, IOException {
@@ -388,6 +401,35 @@ public class AsnOutputStream extends ByteArrayOutputStream {
 	public void writeStringBinary(int tagClass, int tag,BitSet bitString) throws AsnException, IOException {
 		// DONT USE BitSet.size();
 		_writeStringBinary(tagClass, tag,bitString, bitString.length(), 0);
+	}
+
+	public void writeStringBinaryData(BitSet bitString) throws AsnException, IOException {
+		int bitNumber = bitString.length();
+
+		// check if we can write it in simple form
+		int octetCount = bitNumber / 8;
+		int rest = bitNumber % 8;
+		if (rest != 0) {
+			octetCount++;
+		}
+		// 126 - cause bit string has one extra octet.
+		if (octetCount <= 126) {
+			// the extra octet from bit string
+			if (rest == 0) {
+				this.write(0);
+			} else {
+				this.write(8 - rest);
+			}
+
+			// this will padd unused bits with zeros
+			for (int i = 0; i < octetCount; i++) {
+				byte byteRead = _getByte(i * 8, bitString);
+				this.write(byteRead);
+			}
+
+		} else {
+			throw new AsnException("writeStringBinaryData does not support bit strings more than 126 length");
+		}
 	}
 
 	/**

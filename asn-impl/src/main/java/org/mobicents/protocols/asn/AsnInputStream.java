@@ -564,6 +564,39 @@ public class AsnInputStream extends FilterInputStream {
 		this.readBitString(bitSet, 0);
 	}
 
+	public void readBitStringData(BitSet bitSet, int length, boolean isPrimitive) throws AsnException, IOException {
+		if (!isPrimitive) {
+			throw new AsnException("readBitStringData does not support constructed bit strings");
+		}
+		
+		int bits = 0;
+		int counter = 0;
+		int pad = this.read();
+
+		// TODO We are assuming that there is always pad, even if it is 00.
+		// This may not be true for some
+		// Constructed
+		// BitString where padding is only applied to last TLV. In which
+		// case this algo is incorrect
+		for (int count = 1; count < (length - 1); count++) {
+			byte dataByte = (byte) this.read();
+			for (bits = 0; bits < 8; bits++) {
+				if (0 != (dataByte & (0x80 >> bits))) {
+					bitSet.set(counter);
+				}
+				++counter;
+			}
+		}
+
+		byte lastByte = (byte) this.read();
+		for (bits = 0; bits < (8 - pad); bits++) {
+			if (0 != (lastByte & (0x80 >> bits))) {
+				bitSet.set(counter);
+			}
+			++counter;
+		}
+	}
+
 	private int readBitString(BitSet bitSet, int counter) throws AsnException,
 			IOException {
 		// TODO: make it work as recursion
@@ -644,6 +677,15 @@ public class AsnInputStream extends FilterInputStream {
 				readOctetString(outputStream);
 			}
 		}
+	}
+
+	public void readOctetStringData(OutputStream outputStream, int length, boolean isPrimitive) throws AsnException, IOException {
+		
+		if (!isPrimitive) {
+			throw new AsnException("readOctetStringData does not support constructed octet strings");
+		}
+
+		this.fillOutputStream(outputStream, length);
 	}
 
 	/**
