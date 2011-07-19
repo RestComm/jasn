@@ -117,6 +117,16 @@ public class AsnOutputStreamTest extends TestCase {
 
 		compareArrays(expected, encodedData);
 	}
+	
+	@Test
+	public void testInteger32766() throws Exception {
+		// T L V -------------
+		byte[] expected = new byte[] { 0x02, 0x02, 0x7f, (byte) 0xfe };
+		this.output.writeInteger(32766);
+		byte[] encodedData = this.output.toByteArray();
+
+		compareArrays(expected, encodedData);
+	}
 
 	@Test
 	public void testRealBinary118_625() throws Exception { // s E M
