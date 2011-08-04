@@ -1,6 +1,5 @@
 package org.mobicents.protocols.asn;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
 import java.util.BitSet;
@@ -47,85 +46,149 @@ public class AsnOutputStreamTest extends TestCase {
 				same);
 	}
 
-	@Test
-	public void testNULL() throws Exception {
-		byte[] expected = new byte[] { 0x05, 0 };
-		this.output.writeNULL();
-		byte[] encodedData = this.output.toByteArray();
-
-		compareArrays(expected, encodedData);
-	}
 
 	@Test
-	public void testBooleanPos() throws Exception {
-		// T L V
-		byte[] expected = new byte[] { 0x01, 0x01, (byte) 0xFF };
-		this.output.writeBoolean(true);
+	public void testTag() throws Exception {
+		
+		byte[] expected = new byte[] { (byte)0xBF, (byte)0x87, (byte)0x68 };
+		this.output.reset();
+		this.output.writeTag(Tag.CLASS_CONTEXT_SPECIFIC, false, 1000);
 		byte[] encodedData = this.output.toByteArray();
-
-		compareArrays(expected, encodedData);
-
-	}
-
-	@Test
-	public void testBooleanNeg() throws Exception {
-
-		// T L V
-		byte[] expected = new byte[] { 0x01, 0x01, 0x00 };
-		this.output.writeBoolean(false);
-		byte[] encodedData = this.output.toByteArray();
-
-		compareArrays(expected, encodedData);
-	}
-
-	@Test
-	public void testInteger72() throws Exception {
-
-		byte[] expected = new byte[] { 0x02, 0x01, 0x48 };
-		this.output.writeInteger(72);
-		byte[] encodedData = this.output.toByteArray();
-
-		compareArrays(expected, encodedData);
-	}
-
-	@Test
-	public void testInteger127() throws Exception {
-
-		byte[] expected = new byte[] { 0x02, 0x01, 0x7F };
-		this.output.writeInteger(127);
-		byte[] encodedData = this.output.toByteArray();
-
-		compareArrays(expected, encodedData);
-	}
-
-	@Test
-	public void testInteger_128() throws Exception {
-		// T L V
-		byte[] expected = new byte[] { 0x02, 0x01, (byte) 0x80 };
-		this.output.writeInteger(-128);
-		byte[] encodedData = this.output.toByteArray();
-
-		compareArrays(expected, encodedData);
-	}
-
-	@Test
-	public void testInteger128() throws Exception {
-		// T L V -------------
-		byte[] expected = new byte[] { 0x02, 0x02, 0x00, (byte) 0x80 };
-		this.output.writeInteger(128);
-		byte[] encodedData = this.output.toByteArray();
-
 		compareArrays(expected, encodedData);
 	}
 	
 	@Test
-	public void testInteger32766() throws Exception {
-		// T L V -------------
-		byte[] expected = new byte[] { 0x02, 0x02, 0x7f, (byte) 0xfe };
-		this.output.writeInteger(32766);
+	public void testContentLength() throws Exception {
+		
+		// primitive, contentLength field length = 1 byte 
+		byte[] expected = new byte[] { (byte)0x81, 3, 1, 2, 3 };
+		this.output.reset();
+		this.output.writeTag(Tag.CLASS_CONTEXT_SPECIFIC, true, 1);
+		int i1 = this.output.StartContentDefiniteLength();
+		this.output.write(1);
+		this.output.write(2);
+		this.output.write(3);
+		this.output.FinalizeContent(i1);
+		byte[] encodedData = this.output.toByteArray();
+		compareArrays(expected, encodedData);
+		
+		// constructed, contentLength field length = 3 byte
+		byte[] content = new byte[400];
+		Arrays.fill(content, (byte)22);
+		content[0] = 33;
+		content[399] = 33;
+		expected = new byte[4 + 400];
+		expected[0] = (byte)0xA1;
+		expected[1] = (byte)0x82;
+		expected[2] = (byte)(400 >> 8);
+		expected[3] = (byte)(400 & 0xFF);
+		System.arraycopy(content, 0, expected, 4, 400);
+		this.output.reset();
+		this.output.writeTag(Tag.CLASS_CONTEXT_SPECIFIC, false, 1);
+		i1 = this.output.StartContentDefiniteLength();
+		this.output.write(content);
+		this.output.FinalizeContent(i1);
+		encodedData = this.output.toByteArray();
+		compareArrays(expected, encodedData);
+		
+		// constructed, contentLength field in indefinite form
+		expected = new byte[] { (byte)0xA1, (byte)0x80, 1, 2, 3, 0, 0 };
+		this.output.reset();
+		this.output.writeTag(Tag.CLASS_CONTEXT_SPECIFIC, false, 1);
+		i1 = this.output.StartContentIndefiniteLength();
+		this.output.write(1);
+		this.output.write(2);
+		this.output.write(3);
+		this.output.FinalizeContent(i1);
+		encodedData = this.output.toByteArray();
+		compareArrays(expected, encodedData);
+	}
+	
+	@Test
+	public void testNULL() throws Exception {
+		byte[] expected = new byte[] { 0x05, 0 };
+		this.output.writeNull();
 		byte[] encodedData = this.output.toByteArray();
 
 		compareArrays(expected, encodedData);
+	}
+
+	@Test
+	public void testBoolean() throws Exception {
+		// T L V
+		byte[] expected = new byte[] { 0x01, 0x01, (byte) 0xFF };
+		this.output.writeBoolean(true);
+		byte[] encodedData = this.output.toByteArray();
+		compareArrays(expected, encodedData);
+
+		// T L V
+		this.output.reset();
+		expected = new byte[] { 0x01, 0x01, 0x00 };
+		this.output.writeBoolean(false);
+		encodedData = this.output.toByteArray();
+		compareArrays(expected, encodedData);
+	}
+
+	@Test
+	public void testInteger() throws Exception {
+
+		byte[] expected = new byte[] { 0x02, 0x01, 0x48 };
+		this.output.writeInteger(Tag.CLASS_UNIVERSAL, Tag.INTEGER, 72);
+		byte[] encodedData = this.output.toByteArray();
+		compareArrays(expected, encodedData);
+		
+		this.output.reset();
+		expected = new byte[] { 0x02, 0x01, 0x7F };
+		this.output.writeTag(Tag.CLASS_UNIVERSAL, true, Tag.INTEGER);
+		int i1 = this.output.StartContentDefiniteLength();
+		this.output.writeIntegerData(127);
+		this.output.FinalizeContent(i1);
+		encodedData = this.output.toByteArray();
+		compareArrays(expected, encodedData);
+		
+		// T L V
+		this.output.reset();
+		expected = new byte[] { 0x02, 0x01, (byte) 0x80 };
+		this.output.writeInteger(-128);
+		encodedData = this.output.toByteArray();
+		compareArrays(expected, encodedData);
+		
+		// T L V -------------
+		this.output.reset();
+		expected = new byte[] { 0x02, 0x02, 0x00, (byte) 0x80 };
+		this.output.writeInteger(128);
+		encodedData = this.output.toByteArray();
+		compareArrays(expected, encodedData);
+
+		
+		// Test -ve integer -65536
+		this.output.reset();
+		byte[] b = this.intToByteArray(-65536);
+		expected = new byte[] { 0x2, 0x3, b[1], b[2], b[3] };
+		this.output.writeInteger(-65536);
+		encodedData = this.output.toByteArray();
+		compareArrays(expected, encodedData);
+
+		// Test +ve integer 797979
+		this.output.reset();
+		b = this.intToByteArray(797979);
+		expected = new byte[] { 0x2, 0x3, b[1], b[2], b[3] };
+		this.output.writeInteger(797979);
+		encodedData = this.output.toByteArray();
+		compareArrays(expected, encodedData);
+	}
+
+	private byte[] intToByteArray(int value) {
+
+		System.out.println("binary value = " + Integer.toBinaryString(value));
+
+		byte[] b = new byte[4];
+		for (int i = 0; i < 4; i++) {
+			int offset = (b.length - 1 - i) * 8;
+			b[i] = (byte) ((value >>> offset) & 0xFF);
+			System.out.println("byte for " + i + " is " + b[i]);
+		}
+		return b;
 	}
 
 	@Test
@@ -229,8 +292,7 @@ public class AsnOutputStreamTest extends TestCase {
 			// this will "clear" array.
 			this.output.reset();
 
-			AsnInputStream asnIs = new AsnInputStream(new ByteArrayInputStream(
-					encoded));
+			AsnInputStream asnIs = new AsnInputStream(encoded);
 			asnIs.readTag();
 			double dd = asnIs.readReal();
 			assertEquals("Decoded value is not proper!!", d, dd);
@@ -239,7 +301,7 @@ public class AsnOutputStreamTest extends TestCase {
 	}
 
 	@Test
-	public void testBinaryString_Short() throws Exception {
+	public void testBitString_Short() throws Exception {
 		// 11110000 11110000 111101xx //0x0F accoring to book...
 		byte[] expected = new byte[] { 0x03, 0x04, 0x02, (byte) 0xF0,
 				(byte) 0xF0, (byte) 0xF4 };
@@ -257,13 +319,13 @@ public class AsnOutputStreamTest extends TestCase {
 		bs.set(18);
 		bs.set(19);
 		bs.set(21);
-		this.output.writeStringBinary(bs);
+		this.output.writeBitString(bs);
 		byte[] encoded = this.output.toByteArray();
 		compareArrays(expected, encoded);
 	}
 
 	@Test
-	public void testBinaryStringData_Short() throws Exception {
+	public void testBitStringData_Short() throws Exception {
 		// 11110000 11110000 111101xx //0x0F accoring to book...
 		byte[] expected = new byte[] { 0x02, (byte) 0xF0,
 				(byte) 0xF0, (byte) 0xF4 };
@@ -281,66 +343,75 @@ public class AsnOutputStreamTest extends TestCase {
 		bs.set(18);
 		bs.set(19);
 		bs.set(21);
-		this.output.writeStringBinaryData(bs);
+		this.output.writeBitStringData(bs);
 		byte[] encoded = this.output.toByteArray();
 		compareArrays(expected, encoded);
 	}
 
+//	@Test
+//	public void testBinaryString_Complex() throws Exception {
+//
+//		ByteArrayOutputStream bos = new ByteArrayOutputStream();
+//		byte[] expected = new byte[] { 0x03, 0x04, 0x02, (byte) 0xF0,
+//				(byte) 0xF0, (byte) 0xF4 };
+//		BitSet bs = new BitSet();
+//		// complex start
+//		bos.write(0x03 | (0x01 << 5));
+//		bos.write(0x80);
+//
+//		// primitive start
+//		bos.write(0x03);
+//		bos.write(0x7F);
+//
+//		// extra octet
+//		bos.write(0x00);
+//		for (int i = 0; i < 126; i++) {
+//			if (i % 2 == 0) {
+//				bos.write(0x0A);
+//				// 0000 1010
+//				bs.set(i * 8 + 4);
+//				bs.set(i * 8 + 6);
+//			} else {
+//				bos.write(0x0F);
+//				bs.set(i * 8 + 4);
+//				bs.set(i * 8 + 5);
+//				bs.set(i * 8 + 6);
+//				bs.set(i * 8 + 7);
+//			}
+//		}
+//
+//		// next primitive
+//		bos.write(expected);
+//
+//		// terminate complex
+//		bos.write(0x00);
+//		bos.write(0x00);
+//
+//		bs.set(126 * 8 + 0);
+//		bs.set(126 * 8 + 1);
+//		bs.set(126 * 8 + 2);
+//		bs.set(126 * 8 + 3);
+//		bs.set(126 * 8 + 8);
+//		bs.set(126 * 8 + 9);
+//		bs.set(126 * 8 + 10);
+//		bs.set(126 * 8 + 11);
+//		bs.set(126 * 8 + 16);
+//		bs.set(126 * 8 + 17);
+//		bs.set(126 * 8 + 18);
+//		bs.set(126 * 8 + 19);
+//		bs.set(126 * 8 + 21);
+//		this.output.writeStringBinary(bs);
+//		byte[] encoded = this.output.toByteArray();
+//		compareArrays(bos.toByteArray(), encoded);
+//	}
+
 	@Test
-	public void testBinaryString_Complex() throws Exception {
-
-		ByteArrayOutputStream bos = new ByteArrayOutputStream();
-		byte[] expected = new byte[] { 0x03, 0x04, 0x02, (byte) 0xF0,
-				(byte) 0xF0, (byte) 0xF4 };
-		BitSet bs = new BitSet();
-		// complex start
-		bos.write(0x03 | (0x01 << 5));
-		bos.write(0x80);
-
-		// primitive start
-		bos.write(0x03);
-		bos.write(0x7F);
-
-		// extra octet
-		bos.write(0x00);
-		for (int i = 0; i < 126; i++) {
-			if (i % 2 == 0) {
-				bos.write(0x0A);
-				// 0000 1010
-				bs.set(i * 8 + 4);
-				bs.set(i * 8 + 6);
-			} else {
-				bos.write(0x0F);
-				bs.set(i * 8 + 4);
-				bs.set(i * 8 + 5);
-				bs.set(i * 8 + 6);
-				bs.set(i * 8 + 7);
-			}
-		}
-
-		// next primitive
-		bos.write(expected);
-
-		// terminate complex
-		bos.write(0x00);
-		bos.write(0x00);
-
-		bs.set(126 * 8 + 0);
-		bs.set(126 * 8 + 1);
-		bs.set(126 * 8 + 2);
-		bs.set(126 * 8 + 3);
-		bs.set(126 * 8 + 8);
-		bs.set(126 * 8 + 9);
-		bs.set(126 * 8 + 10);
-		bs.set(126 * 8 + 11);
-		bs.set(126 * 8 + 16);
-		bs.set(126 * 8 + 17);
-		bs.set(126 * 8 + 18);
-		bs.set(126 * 8 + 19);
-		bs.set(126 * 8 + 21);
-		this.output.writeStringBinary(bs);
+	public void testOctetString() throws Exception {
+		byte[] expected = new byte[] { 0x04, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0 };
+		byte[] bs = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 0 };
+		this.output.writeOctetString(bs);
 		byte[] encoded = this.output.toByteArray();
-		compareArrays(bos.toByteArray(), encoded);
+		compareArrays(expected, encoded);
 	}
 
 	@Test
@@ -447,19 +518,23 @@ public class AsnOutputStreamTest extends TestCase {
 	
 	@Test
 	public void testObjectIdentifier() throws Exception {
-		
-		byte[] expected = new byte[] {Tag.OBJECT_IDENTIFIER, 0x6, 0x4, 0x28, (byte) 0xC2, (byte) 0x7B, 0x02 };
-		
+
+		byte[] expected = new byte[] {Tag.OBJECT_IDENTIFIER, 0x4, 0x28, (byte) 0xC2, (byte) 0x7B, 0x02 };
 		long[] oids = new long[]{1, 0, 8571, 2};
 
-		// Tag
-		this.output.write(Tag.OBJECT_IDENTIFIER);
-		
-		//Length and Value
 		this.output.writeObjectIdentifier(oids);
-		
 		byte[] encodedData = this.output.toByteArray();
-		
+		compareArrays(expected, encodedData);
+
+		expected = new byte[] {Tag.OBJECT_IDENTIFIER, 0x2, (byte)180, 1 };
+		oids = new long[]{2, 100, 1};
+
+		this.output.reset();
+		this.output.write(Tag.OBJECT_IDENTIFIER);
+		int i1 = this.output.StartContentDefiniteLength();
+		this.output.writeObjectIdentifierData(oids);
+		this.output.FinalizeContent(i1);
+		encodedData = this.output.toByteArray();
 		compareArrays(expected, encodedData);
 	}	
 

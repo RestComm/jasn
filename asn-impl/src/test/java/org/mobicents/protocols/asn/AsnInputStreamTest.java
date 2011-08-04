@@ -2,6 +2,7 @@ package org.mobicents.protocols.asn;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.BitSet;
 
 import junit.framework.TestCase;
@@ -36,21 +37,140 @@ public class AsnInputStreamTest extends TestCase {
 	public void tearDown() {
 	}
 
+
+	@Test
+	public void testTag() throws Exception {
+		byte[] data = new byte[] { (byte)0xBF, (byte)0x87, (byte)0x68 };
+		AsnInputStream asnIs = new AsnInputStream(data);
+		int tag = asnIs.readTag();
+		
+		assertEquals(1000, tag);
+		assertEquals(Tag.CLASS_CONTEXT_SPECIFIC, asnIs.getTagClass());
+		assertEquals(false, asnIs.isTagPrimitive());
+	}
+	
+	@Test
+	public void testReadSequence() throws Exception {
+		
+		AsnInputStream asnIs = new AsnInputStream(definiteSeqData());
+		int tag = asnIs.readTag();
+		AsnInputStream asnIs2 = asnIs.readSequenceStream();
+		testSeqData(tag, asnIs2, asnIs);
+		
+		asnIs = new AsnInputStream(definiteSeqData());
+		tag = asnIs.readTag();
+		int length = asnIs.readLength();
+		asnIs2 = asnIs.readSequenceStreamData(length);
+		testSeqData(tag, asnIs2, asnIs);
+		
+		asnIs = new AsnInputStream(indefiniteSeqData());
+		tag = asnIs.readTag();
+		asnIs2 = asnIs.readSequenceStream();
+		testSeqData(tag, asnIs2, asnIs);
+
+		asnIs = new AsnInputStream(definiteSeqData());
+		tag = asnIs.readTag();
+		byte[] bfRes = asnIs.readSequence();
+		testSeqData(tag, bfRes, asnIs);
+
+		asnIs = new AsnInputStream(definiteSeqData());
+		tag = asnIs.readTag();
+		length = asnIs.readLength();
+		bfRes = asnIs.readSequenceData(length);
+		testSeqData(tag, bfRes, asnIs);
+
+		asnIs = new AsnInputStream(indefiniteSeqData());
+		tag = asnIs.readTag();
+		bfRes = asnIs.readSequence();
+		testSeqData(tag, bfRes, asnIs);
+
+	}
+	
+	private void testSeqData(int tag, AsnInputStream asnIs2, AsnInputStream asnIs) throws IOException {
+
+		assertEquals(0, asnIs.available());
+
+		assertEquals(Tag.SEQUENCE, tag);
+
+		assertTrue(5 == asnIs2.available());
+
+		assertEquals(Tag.STRING_OCTET, asnIs2.read());
+		assertEquals(3, asnIs2.read());
+		assertEquals(1, asnIs2.read());
+		assertEquals(2, asnIs2.read());
+		assertEquals(3, asnIs2.read());
+	}
+	
+	private void testSeqData(int tag, byte[] data, AsnInputStream asnIs) throws IOException {
+
+		assertEquals(0, asnIs.available());
+
+		assertEquals(Tag.SEQUENCE, tag);
+
+		assertTrue(5 == data.length);
+
+		assertEquals(Tag.STRING_OCTET, data[0]);
+		assertEquals(3, data[1]);
+		assertEquals(1, data[2]);
+		assertEquals(2, data[3]);
+		assertEquals(3, data[4]);
+	}
+	
+	private byte[] definiteSeqData() {
+		return new byte[] { Tag.SEQUENCE, 5, Tag.STRING_OCTET, 3, 1, 2, 3 };
+	}
+	
+	private byte[] indefiniteSeqData() {
+		return new byte[] { Tag.SEQUENCE, (byte)0x80, Tag.STRING_OCTET, 3, 1, 2, 3, 0, 0 };
+	}
+
 	@Test
 	public void testReadIndefinite() throws Exception {
 		byte[] data = new byte[] { (byte)0x80, (byte)0x80, 0x09, (byte)0x96, 0x02, 0x24, (byte)0x80,
 				0x03, 0x00, (byte)0x80, 0x00, (byte)0xf2, (byte)0x81, 0x07, (byte)0x91, 0x13, 0x26,
 				(byte)0x98, (byte)0x86, 0x03, (byte)0xf0, 0x00, 0x00 };
 		
-		ByteArrayInputStream baIs = new ByteArrayInputStream(data);
-		AsnInputStream asnIs = new AsnInputStream(baIs);
-		
+		AsnInputStream asnIs = new AsnInputStream(data);
 		int length = asnIs.readLength();
-		
+		assertTrue(Tag.Indefinite_Length == length);
 		byte[] indefiniteData = asnIs.readIndefinite();
-		
 		assertTrue(20 == indefiniteData.length);
 
+		asnIs = new AsnInputStream(data);
+		AsnInputStream asnIs2 = asnIs.readSequenceStream();
+		assertTrue(20 == asnIs2.available());
+
+		asnIs = new AsnInputStream(data);
+		byte[] bfRes = asnIs.readSequence();
+		assertTrue(20 == bfRes.length);
+
+	}
+
+	@Test
+	public void testNull() throws Exception {
+		byte[] data = new byte[] { 5, 0 };
+		AsnInputStream asnIs = new AsnInputStream(data);
+		int tag = asnIs.readTag();
+		asnIs.readNull();
+
+		assertEquals(Tag.NULL, tag);
+		assertEquals(Tag.CLASS_UNIVERSAL, asnIs.getTagClass());
+		assertEquals(true, asnIs.isTagPrimitive());
+		assertEquals(0, asnIs.available());
+	}
+
+	@Test
+	public void testBool() throws Exception {
+		byte[] data = new byte[] { 1, 1, (byte)0xFF };
+		AsnInputStream asnIs = new AsnInputStream(data);
+		int tag = asnIs.readTag();
+		boolean res = asnIs.readBoolean();
+
+		assertEquals(Tag.BOOLEAN, tag);
+		assertEquals(Tag.CLASS_UNIVERSAL, asnIs.getTagClass());
+		assertEquals(true, asnIs.isTagPrimitive());
+		assertEquals(0, asnIs.available());
+		assertEquals(true, res);
 	}
 
 	@Test
@@ -58,13 +178,29 @@ public class AsnInputStreamTest extends TestCase {
 
 		// Test -ve integer -128
 		byte[] data = new byte[] { 0x2, 0x1, (byte) 0x80 };
-		ByteArrayInputStream baIs = new ByteArrayInputStream(data);
-		AsnInputStream asnIs = new AsnInputStream(baIs);
+		AsnInputStream asnIs = new AsnInputStream(data);
 		int tag = asnIs.readTag();
 		assertEquals(Tag.INTEGER, tag);
 		long value = asnIs.readInteger();
-
 		assertEquals(-128, value);
+
+		// Test -ve integer 128
+		data = new byte[] { 0x2, 0x2, 0x0, (byte) 0x80 };
+		asnIs = new AsnInputStream(data);
+		tag = asnIs.readTag();
+		assertEquals(Tag.INTEGER, tag);
+		int length = asnIs.readLength();
+		value = asnIs.readIntegerData(length);
+		assertEquals(128, value);
+
+		// Test -ve integer 127
+		data = new byte[] { 0x2, 0x1, (byte) 0x7F };
+		asnIs = new AsnInputStream(data);
+		tag = asnIs.readTag();
+		assertEquals(Tag.INTEGER, tag);
+		length = asnIs.readLength();
+		value = asnIs.readIntegerData(length);
+		assertEquals(127, value);
 
 		// Test -ve integer -65536
 		byte[] b = this.intToByteArray(-65536);
@@ -72,10 +208,9 @@ public class AsnInputStreamTest extends TestCase {
 		System.err.println(Integer.toBinaryString(-65536));
 		System.err.println("000000000000000" + Integer.toBinaryString(65536));
 
-		data = new byte[] { 0x2, 0x4, b[0], b[1], b[2], b[3] };
+		data = new byte[] { 0x2, 0x3, b[1], b[2], b[3] };
 
-		baIs = new ByteArrayInputStream(data);
-		asnIs = new AsnInputStream(baIs);
+		asnIs = new AsnInputStream(data);
 		tag = asnIs.readTag();
 		assertEquals(Tag.INTEGER, tag);
 		value = asnIs.readInteger();
@@ -85,10 +220,9 @@ public class AsnInputStreamTest extends TestCase {
 		// Test +ve integer 797979
 		b = this.intToByteArray(797979);
 
-		data = new byte[] { 0x2, 0x4, b[0], b[1], b[2], b[3] };
+		data = new byte[] { 0x2, 0x3, b[1], b[2], b[3] };
 
-		baIs = new ByteArrayInputStream(data);
-		asnIs = new AsnInputStream(baIs);
+		asnIs = new AsnInputStream(data);
 		tag = asnIs.readTag();
 		assertEquals(Tag.INTEGER, tag);
 		value = asnIs.readInteger();
@@ -115,13 +249,13 @@ public class AsnInputStreamTest extends TestCase {
 		byte[] data = new byte[] { 0x03, 0x04, 0x02, (byte) 0xF0, (byte) 0xF0,
 				(byte) 0xF4 };
 
-		ByteArrayInputStream baIs = new ByteArrayInputStream(data);
-		AsnInputStream asnIs = new AsnInputStream(baIs);
+		AsnInputStream asnIs = new AsnInputStream(data);
 
 		BitSet bitSet = new BitSet();
 
 		int tagValue = asnIs.readTag();
-		asnIs.readBitString(bitSet);
+		assertEquals(Tag.STRING_BIT, tagValue);
+		bitSet = asnIs.readBitString();
 
 		// f0f0f4 is 111100001111000011110100 reduce 02 bits so total length is
 		// 22
@@ -162,14 +296,12 @@ public class AsnInputStreamTest extends TestCase {
 		byte[] data = new byte[] { 0x03, 0x04, 0x02, (byte) 0xF0, (byte) 0xF0,
 				(byte) 0xF4 };
 
-		ByteArrayInputStream baIs = new ByteArrayInputStream(data);
-		AsnInputStream asnIs = new AsnInputStream(baIs);
-
-		BitSet bitSet = new BitSet();
+		AsnInputStream asnIs = new AsnInputStream(data);
 
 		int tagValue = asnIs.readTag();
 		int length = asnIs.readLength();
-		asnIs.readBitStringData(bitSet, length, asnIs.isTagPrimitive());
+		BitSet bitSet = asnIs.readBitStringData(length);
+		assertEquals(Tag.STRING_BIT, tagValue);
 
 		// f0f0f4 is 111100001111000011110100 reduce 02 bits so total length is
 		// 22
@@ -207,18 +339,26 @@ public class AsnInputStreamTest extends TestCase {
 
 	@Test
 	public void testBitStringConstructed() throws Exception {
+
 		byte[] data = new byte[] { 0x23, (byte) 0x80, 0x03, 0x03, 0x00,
-				(byte) 0xF0, (byte) 0xF0, 0x03, 0x02, 0x02, (byte) 0xF4, 0x00 };
+				(byte) 0xF0, (byte) 0xF0, 0x03, 0x02, 0x02, (byte) 0xF4, 0x00, 0x00 };
 
-		byte[] octetString = new byte[] { (byte) 0xF0, (byte) 0xF0, (byte) 0xF4 };
+		_testBitStringConstructed(data);
 
-		ByteArrayInputStream baIs = new ByteArrayInputStream(data);
-		AsnInputStream asnIs = new AsnInputStream(baIs);
+		data = new byte[] { 0x23, 0x09, 0x03, 0x03, 0x00,
+				(byte) 0xF0, (byte) 0xF0, 0x03, 0x02, 0x02, (byte) 0xF4 };
 
-		BitSet bitSet = new BitSet();
+		_testBitStringConstructed(data);
+
+	}
+
+	private void _testBitStringConstructed(byte[] data) throws IOException, AsnException {
+		AsnInputStream asnIs = new AsnInputStream(data);
+
 		// here we have to explicitly read the Tag
 		int tagValue = asnIs.readTag();
-		asnIs.readBitString(bitSet);
+		assertEquals(Tag.STRING_BIT, tagValue);
+		BitSet bitSet = asnIs.readBitString();
 
 		// f0f0f4 is 111100001111000011110100 reduce 02 bits so total length is
 		// 22
@@ -251,7 +391,6 @@ public class AsnInputStreamTest extends TestCase {
 		assertFalse(bitSet.get(20));
 
 		assertTrue(bitSet.get(21));
-
 	}
 
 	@Test
@@ -260,38 +399,21 @@ public class AsnInputStreamTest extends TestCase {
 				0x55, 0x66, 0x77, (byte) 0x88, (byte) 0x99, (byte) 0xAA,
 				(byte) 0xBB, (byte) 0XCC, (byte) 0xDD, (byte) 0xEE, (byte) 0xFF };
 
-		ByteArrayInputStream baIs = new ByteArrayInputStream(data);
-		AsnInputStream asnIs = new AsnInputStream(baIs);
-
-		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+		AsnInputStream asnIs = new AsnInputStream(data);
 		// here we have to explicitly read the Tag
 		int tagValue = asnIs.readTag();
-		asnIs.readOctetString(byteArrayOutputStream);
-
-		byte[] resultData = byteArrayOutputStream.toByteArray();
-
+		assertEquals(Tag.STRING_OCTET, tagValue);
+		byte[] resultData = asnIs.readOctetString();
 		for (int i = 0; i < resultData.length; i++) {
 			assertTrue(resultData[i] == data[i + 2]);
 		}
-	}
 
-	@Test
-	public void testOctetStringPrimitiveData() throws Exception {
-		byte[] data = new byte[] { 0x4, 0x10, 0x00, 0x11, 0x22, 0x33, 0x44,
-				0x55, 0x66, 0x77, (byte) 0x88, (byte) 0x99, (byte) 0xAA,
-				(byte) 0xBB, (byte) 0XCC, (byte) 0xDD, (byte) 0xEE, (byte) 0xFF };
-
-		ByteArrayInputStream baIs = new ByteArrayInputStream(data);
-		AsnInputStream asnIs = new AsnInputStream(baIs);
-
-		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+		asnIs = new AsnInputStream(data);
 		// here we have to explicitly read the Tag
-		int tagValue = asnIs.readTag();
+		tagValue = asnIs.readTag();
+		assertEquals(Tag.STRING_OCTET, tagValue);
 		int length = asnIs.readLength();
-		asnIs.readOctetStringData(byteArrayOutputStream, length, asnIs.isTagPrimitive());
-
-		byte[] resultData = byteArrayOutputStream.toByteArray();
-
+		resultData = asnIs.readOctetStringData(length);
 		for (int i = 0; i < resultData.length; i++) {
 			assertTrue(resultData[i] == data[i + 2]);
 		}
@@ -299,25 +421,34 @@ public class AsnInputStreamTest extends TestCase {
 
 	@Test
 	public void testOctetStringConstructed() throws Exception {
+		
+		// indefinite length
 		byte[] data = new byte[] { 0x24, (byte) 0x80, 0x04, 0x08, 0x00, 0x11,
 				0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x04, 0x08, (byte) 0x88,
 				(byte) 0x99, (byte) 0xAA, (byte) 0xBB, (byte) 0XCC,
-				(byte) 0xDD, (byte) 0xEE, (byte) 0xFF, 0x00 };
+				(byte) 0xDD, (byte) 0xEE, (byte) 0xFF, 0x00, 0x00 };
 
 		byte[] octetString = new byte[] { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55,
 				0x66, 0x77, (byte) 0x88, (byte) 0x99, (byte) 0xAA, (byte) 0xBB,
 				(byte) 0XCC, (byte) 0xDD, (byte) 0xEE, (byte) 0xFF };
 
-		ByteArrayInputStream baIs = new ByteArrayInputStream(data);
-		AsnInputStream asnIs = new AsnInputStream(baIs);
-
-		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-		// here we have to explicitly read the Tag
+		AsnInputStream asnIs = new AsnInputStream(data);
 		int tagValue = asnIs.readTag();
-		asnIs.readOctetString(byteArrayOutputStream);
-
-		byte[] resultData = byteArrayOutputStream.toByteArray();
-
+		assertEquals(Tag.STRING_OCTET, tagValue);
+		byte[] resultData = asnIs.readOctetString();
+		for (int i = 0; i < resultData.length; i++) {
+			assertTrue(resultData[i] == octetString[i]);
+		}
+		
+		// definite length
+		byte[] data2 = new byte[] { 0x24, 20, 0x04, 0x08, 0x00, 0x11,
+				0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x04, 0x08, (byte) 0x88,
+				(byte) 0x99, (byte) 0xAA, (byte) 0xBB, (byte) 0XCC,
+				(byte) 0xDD, (byte) 0xEE, (byte) 0xFF };
+		asnIs = new AsnInputStream(data2);
+		tagValue = asnIs.readTag();
+		assertEquals(Tag.STRING_OCTET, tagValue);
+		resultData = asnIs.readOctetString();
 		for (int i = 0; i < resultData.length; i++) {
 			assertTrue(resultData[i] == octetString[i]);
 		}
@@ -348,10 +479,10 @@ public class AsnInputStreamTest extends TestCase {
 
 				0x0D, (byte) 0xA8, 0x00, 0x00, 0x00, 0x00, 0x00 };
 
-		ByteArrayInputStream baIs = new ByteArrayInputStream(binary1);
-		AsnInputStream asnIs = new AsnInputStream(baIs);
+		AsnInputStream asnIs = new AsnInputStream(binary1);
 		int tagValue = asnIs.readTag();
-
+		assertEquals(Tag.REAL, tagValue);
+		
 		// assertEquals(Tag.CLASS_UNIVERSAL, Tag.getTagClass(tagValue));
 		// assertTrue(Tag.isPrimitive(tagValue);
 		// assertEquals(Tag.REAL, Tag.getType(tagValue));
@@ -378,8 +509,7 @@ public class AsnInputStreamTest extends TestCase {
 
 				0x0D, (byte) 0xA8, 0x00, 0x00, 0x00, 0x00, 0x00 };
 
-		baIs = new ByteArrayInputStream(binary2);
-		asnIs = new AsnInputStream(baIs);
+		asnIs = new AsnInputStream(binary2);
 		tagValue = asnIs.readTag();
 
 		// assertEquals(Tag.CLASS_UNIVERSAL, Tag.getTagClass(tagValue));
@@ -420,9 +550,9 @@ public class AsnInputStreamTest extends TestCase {
 			bos.write(((0x00 << 6)) | (NR));
 			bos.write(data);
 			byte[] bb = bos.toByteArray();
-			ByteArrayInputStream baIs = new ByteArrayInputStream(bb);
-			AsnInputStream asnIs = new AsnInputStream(baIs);
+			AsnInputStream asnIs = new AsnInputStream(bb);
 			int tagValue = asnIs.readTag();
+			assertEquals(Tag.REAL, tagValue);
 
 			// assertEquals(Tag.CLASS_UNIVERSAL, Tag.getTagClass(tagValue));
 			// assertTrue(Tag.isPrimitive(tagValue);
@@ -450,13 +580,11 @@ public class AsnInputStreamTest extends TestCase {
 		bos.write(data);
 
 		byte[] bb = bos.toByteArray();
-		ByteArrayInputStream baIs = new ByteArrayInputStream(bb);
-		AsnInputStream asnIs = new AsnInputStream(baIs);
-		int tagValue = asnIs.readTag();
-
-		// assertEquals(Tag.CLASS_UNIVERSAL, Tag.getTagClass(tagValue));
-		// assertTrue(Tag.isPrimitive(tagValue);
-		// assertEquals(Tag.REAL, Tag.getType(tagValue));
+		AsnInputStream asnIs = new AsnInputStream(bb);
+		int tag = asnIs.readTag();
+		assertEquals(Tag.CLASS_UNIVERSAL, asnIs.getTagClass());
+		assertEquals(true, asnIs.isTagPrimitive());
+		assertEquals(Tag.STRING_IA5, tag);
 		String readData = asnIs.readIA5String();
 		assertEquals(dataString, readData);
 	}
@@ -479,6 +607,7 @@ public class AsnInputStreamTest extends TestCase {
 		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_CONSTRUCTED << 5)
 				| Tag.STRING_IA5);
 		bos.write(0x80); // idefinite length
+
 		bos.write((Tag.CLASS_UNIVERSAL << 6) | (Tag.PC_CONSTRUCTED << 5)
 				| Tag.STRING_IA5);
 		bos.write(0x80); // idefinite length
@@ -512,13 +641,12 @@ public class AsnInputStreamTest extends TestCase {
 		bos.write(Tag.NULL_VALUE);
 
 		byte[] bb = bos.toByteArray();
-		ByteArrayInputStream baIs = new ByteArrayInputStream(bb);
-		AsnInputStream asnIs = new AsnInputStream(baIs);
-		int tagValue = asnIs.readTag();
+		AsnInputStream asnIs = new AsnInputStream(bb);
+		int tag = asnIs.readTag();
 
-		// assertEquals(Tag.CLASS_UNIVERSAL, Tag.getTagClass(tagValue));
-		// assertTrue(Tag.isPrimitive(tagValue);
-		// assertEquals(Tag.REAL, Tag.getType(tagValue));
+		assertEquals(Tag.CLASS_UNIVERSAL, asnIs.getTagClass());
+		assertEquals(false, asnIs.isTagPrimitive());
+		assertEquals(Tag.STRING_IA5, tag);
 		String readData = asnIs.readIA5String();
 		assertEquals(resultString, readData);
 	}
@@ -572,13 +700,12 @@ public class AsnInputStreamTest extends TestCase {
 		bos.write(Tag.NULL_VALUE);
 
 		byte[] bb = bos.toByteArray();
-		ByteArrayInputStream baIs = new ByteArrayInputStream(bb);
-		AsnInputStream asnIs = new AsnInputStream(baIs);
-		int tagValue = asnIs.readTag();
+		AsnInputStream asnIs = new AsnInputStream(bb);
+		int tag = asnIs.readTag();
 
-		// assertEquals(Tag.CLASS_UNIVERSAL, Tag.getTagClass(tagValue));
-		// assertTrue(Tag.isPrimitive(tagValue);
-		// assertEquals(Tag.REAL, Tag.getType(tagValue));
+		assertEquals(Tag.CLASS_UNIVERSAL, asnIs.getTagClass());
+		assertEquals(false, asnIs.isTagPrimitive());
+		assertEquals(Tag.STRING_IA5, tag);
 		String readData = asnIs.readIA5String();
 		assertEquals(resultString, readData);
 	}
@@ -633,13 +760,12 @@ public class AsnInputStreamTest extends TestCase {
 		bos.write(Tag.NULL_VALUE);
 
 		byte[] bb = bos.toByteArray();
-		ByteArrayInputStream baIs = new ByteArrayInputStream(bb);
-		AsnInputStream asnIs = new AsnInputStream(baIs);
-		int tagValue = asnIs.readTag();
+		AsnInputStream asnIs = new AsnInputStream(bb);
+		int tag = asnIs.readTag();
 
-		// assertEquals(Tag.CLASS_UNIVERSAL, Tag.getTagClass(tagValue));
-		// assertTrue(Tag.isPrimitive(tagValue);
-		// assertEquals(Tag.REAL, Tag.getType(tagValue));
+		assertEquals(Tag.CLASS_UNIVERSAL, asnIs.getTagClass());
+		assertEquals(false, asnIs.isTagPrimitive());
+		assertEquals(Tag.STRING_IA5, tag);
 		String readData = asnIs.readIA5String();
 		assertEquals(resultString, readData);
 	}
@@ -657,13 +783,12 @@ public class AsnInputStreamTest extends TestCase {
 		bos.write(data);
 
 		byte[] bb = bos.toByteArray();
-		ByteArrayInputStream baIs = new ByteArrayInputStream(bb);
-		AsnInputStream asnIs = new AsnInputStream(baIs);
-		int tagValue = asnIs.readTag();
+		AsnInputStream asnIs = new AsnInputStream(bb);
+		int tag = asnIs.readTag();
 
-		// assertEquals(Tag.CLASS_UNIVERSAL, Tag.getTagClass(tagValue));
-		// assertTrue(Tag.isPrimitive(tagValue);
-		// assertEquals(Tag.REAL, Tag.getType(tagValue));
+		assertEquals(Tag.CLASS_UNIVERSAL, asnIs.getTagClass());
+		assertEquals(true, asnIs.isTagPrimitive());
+		assertEquals(Tag.STRING_UTF8, tag);
 		String readData = asnIs.readUTF8String();
 		assertEquals(dataString, readData);
 	}
@@ -716,13 +841,12 @@ public class AsnInputStreamTest extends TestCase {
 		bos.write(Tag.NULL_VALUE);
 
 		byte[] bb = bos.toByteArray();
-		ByteArrayInputStream baIs = new ByteArrayInputStream(bb);
-		AsnInputStream asnIs = new AsnInputStream(baIs);
-		int tagValue = asnIs.readTag();
+		AsnInputStream asnIs = new AsnInputStream(bb);
+		int tag = asnIs.readTag();
 
-		// assertEquals(Tag.CLASS_UNIVERSAL, Tag.getTagClass(tagValue));
-		// assertTrue(Tag.isPrimitive(tagValue);
-		// assertEquals(Tag.REAL, Tag.getType(tagValue));
+		assertEquals(Tag.CLASS_UNIVERSAL, asnIs.getTagClass());
+		assertEquals(false, asnIs.isTagPrimitive());
+		assertEquals(Tag.STRING_UTF8, tag);
 		String readData = asnIs.readUTF8String();
 		assertEquals(resultString, readData);
 	}
@@ -774,13 +898,12 @@ public class AsnInputStreamTest extends TestCase {
 		bos.write(Tag.NULL_VALUE);
 
 		byte[] bb = bos.toByteArray();
-		ByteArrayInputStream baIs = new ByteArrayInputStream(bb);
-		AsnInputStream asnIs = new AsnInputStream(baIs);
-		int tagValue = asnIs.readTag();
+		AsnInputStream asnIs = new AsnInputStream(bb);
+		int tag = asnIs.readTag();
 
-		// assertEquals(Tag.CLASS_UNIVERSAL, Tag.getTagClass(tagValue));
-		// assertTrue(Tag.isPrimitive(tagValue);
-		// assertEquals(Tag.REAL, Tag.getType(tagValue));
+		assertEquals(Tag.CLASS_UNIVERSAL, asnIs.getTagClass());
+		assertEquals(false, asnIs.isTagPrimitive());
+		assertEquals(Tag.STRING_UTF8, tag);
 		String readData = asnIs.readUTF8String();
 		assertEquals(resultString, readData);
 	}
@@ -832,13 +955,12 @@ public class AsnInputStreamTest extends TestCase {
 		bos.write(Tag.NULL_VALUE);
 
 		byte[] bb = bos.toByteArray();
-		ByteArrayInputStream baIs = new ByteArrayInputStream(bb);
-		AsnInputStream asnIs = new AsnInputStream(baIs);
-		int tagValue = asnIs.readTag();
+		AsnInputStream asnIs = new AsnInputStream(bb);
+		int tag = asnIs.readTag();
 
-		// assertEquals(Tag.CLASS_UNIVERSAL, Tag.getTagClass(tagValue));
-		// assertTrue(Tag.isPrimitive(tagValue);
-		// assertEquals(Tag.REAL, Tag.getType(tagValue));
+		assertEquals(Tag.CLASS_UNIVERSAL, asnIs.getTagClass());
+		assertEquals(false, asnIs.isTagPrimitive());
+		assertEquals(Tag.STRING_UTF8, tag);
 		String readData = asnIs.readUTF8String();
 		assertEquals(resultString, readData);
 	}
@@ -850,13 +972,11 @@ public class AsnInputStreamTest extends TestCase {
 				0x02 };
 
 		long[] actualOID = new long[] { 1, 0, 8571, 2 };
-		ByteArrayInputStream baIs = new ByteArrayInputStream(data);
-		AsnInputStream asnIs = new AsnInputStream(baIs);
+		AsnInputStream asnIs = new AsnInputStream(data);
 		assertEquals(Tag.OBJECT_IDENTIFIER, asnIs.readTag());
 		long[] decodedOID = asnIs.readObjectIdentifier();
 
 		assertEquals(actualOID.length, decodedOID.length);
-
 		for (int i = 0; i < decodedOID.length; i++) {
 			assertEquals(actualOID[i], decodedOID[i]);
 		}
@@ -866,13 +986,11 @@ public class AsnInputStreamTest extends TestCase {
 				(byte) 0x86, (byte) 0xF7, 0x0D };
 
 		actualOID = new long[] { 1, 2, 840, 113549 };
-		baIs = new ByteArrayInputStream(data);
-		asnIs = new AsnInputStream(baIs);
+		asnIs = new AsnInputStream(data);
 		assertEquals(Tag.OBJECT_IDENTIFIER, asnIs.readTag());
 		decodedOID = asnIs.readObjectIdentifier();
 
 		assertEquals(actualOID.length, decodedOID.length);
-
 		for (int i = 0; i < decodedOID.length; i++) {
 			assertEquals(actualOID[i], decodedOID[i]);
 		}
@@ -884,11 +1002,28 @@ public class AsnInputStreamTest extends TestCase {
 		// Test {iso(1) standard(0) 8571 abstract-syntax(2)}
 		byte[] data = new byte[] { 0x6, 0x7, 0x00, 0x11, (byte) 0x86, 0x05,
 				0x01, 0x02, 0x01 };
+		long[] actualOID = new long[] { 0, 0, 17, 773, 1, 2, 1 };
 
-		ByteArrayInputStream baIs = new ByteArrayInputStream(data);
-		AsnInputStream asnIs = new AsnInputStream(baIs);
-		long[] decoded = asnIs.readObjectIdentifier();
+		AsnInputStream asnIs = new AsnInputStream(data);
+		assertEquals(Tag.OBJECT_IDENTIFIER, asnIs.readTag());
+		int length = asnIs.readLength();
+		long[] decodedOID = asnIs.readObjectIdentifierData(length);
 
+		assertEquals(actualOID.length, decodedOID.length);
+		for (int i = 0; i < decodedOID.length; i++) {
+			assertEquals(actualOID[i], decodedOID[i]);
+		}
+
+		data = new byte[] { Tag.OBJECT_IDENTIFIER, 0x2, (byte)180, 1 };
+		actualOID = new long[] { 2, 100, 1 };
+		asnIs = new AsnInputStream(data);
+		assertEquals(Tag.OBJECT_IDENTIFIER, asnIs.readTag());
+		decodedOID = asnIs.readObjectIdentifier();
+
+		assertEquals(actualOID.length, decodedOID.length);
+		for (int i = 0; i < decodedOID.length; i++) {
+			assertEquals(actualOID[i], decodedOID[i]);
+		}
 	}
 
 }

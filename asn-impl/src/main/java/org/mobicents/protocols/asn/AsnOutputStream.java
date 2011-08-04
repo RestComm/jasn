@@ -1,7 +1,28 @@
+/*
+ * JBoss, Home of Professional Open Source
+ * Copyright 2011, Red Hat, Inc. and individual contributors
+ * by the @authors tag. See the copyright.txt in the distribution for a
+ * full listing of individual contributors.
+ *
+ * This is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * This software is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ */
+
 package org.mobicents.protocols.asn;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
@@ -9,261 +30,405 @@ import java.nio.ByteBuffer;
 import java.util.BitSet;
 
 /**
- * Stream to handle BER endcoding of data. Provides primitives encoding. Takes
- * care of encoding
  * 
- * @author abhayani
+ * @author amit bhayani
  * @author baranowb
+ * @author sergey vetyutnev
  */
-public class AsnOutputStream extends ByteArrayOutputStream {
+public class AsnOutputStream {
+
 	// charset used to encode real data
 	private static final String _REAL_BASE10_CHARSET = "US-ASCII";
 	// out patterns for bool
 	private static final byte _BOOLEAN_POSITIVE = (byte) 0xFF;
 	private static final byte _BOOLEAN_NEGATIVE = 0x00;
 
-	// FIXME: check how much we write after each tag?
-	// some state
-	// private byte length = 0;
-
-	public void writeTag(int tagClass, boolean primitive, long tag) {
-		//FIXME: add this
+	private byte[] buffer;
+	
+	private int pos;
+	private int length;
+	
+	
+	public AsnOutputStream() {
 		
+		this.length = 256;
+		this.buffer = new byte[this.length];
 	}
+	
+	
 	/**
-	 * Method used to write tags for common types - be it complex or primitive.
+	 * Returns the written to the stream data as a byte array
+	 * 
+	 * @return
+	 */
+	public byte[] toByteArray() {
+		
+		if (this.pos == this.length)
+			return this.buffer;
+		else {
+			byte[] res = new byte[this.pos];
+			System.arraycopy(this.buffer, 0, res, 0, this.pos);
+			return res;
+		}
+	}
+	
+	/**
+	 * Returns the written bytes count
+	 * 
+	 * @return
+	 */
+	public int size() {
+		return this.pos;
+	}
+	
+	/**
+	 * Clears the data from the stream for reusing it 
+	 */
+	public void reset() {
+		this.pos = 0;
+	}
+	
+	private void checkIncreaseArray( int addCount ) {
+		
+		if (this.pos + addCount > this.length) {
+			int newLength = this.length * 2;
+			if (newLength < this.pos + addCount)
+				newLength = this.pos + addCount + this.length;
+			byte[] newBuf = new byte[newLength];
+			System.arraycopy(this.buffer, 0, newBuf, 0, this.buffer.length);
+			
+			this.buffer = newBuf;
+			this.length = newLength;
+		}
+	}
+	
+	/**
+	 * Writes a byte into the stream
+	 * 
+	 * @param b
+	 */
+	public void write( int b ) {
+		this.checkIncreaseArray(1);
+		this.buffer[this.pos++] = (byte)b;
+	}
+	
+	/**
+	 * Writes a byte array content into the stream
+	 * 
+	 * @param b
+	 * @param off
+	 * @param len
+	 */
+	public void write(byte[] b, int off, int len) {
+		this.checkIncreaseArray(len);
+		System.arraycopy(b, off, this.buffer, this.pos, len);
+		this.pos += len;
+	}
+	
+	/**
+	 * Writes a byte array content into the stream
+	 * 
+	 * @param b
+	 */
+	public void write(byte[] b) {
+		this.write(b, 0, b.length);
+	}
+
+
+	/**
+	 * Writes a tag field into the atream
 	 * 
 	 * @param tagClass
 	 * @param primitive
-	 * @param value -
-	 *            less significant bits(4) are encoded as tag code
+	 * @param tag
+	 * @throws AsnException
 	 */
-	public void writeTag(int tagClass, boolean primitive, int value) {
-
-		int toEncode = (tagClass & 0x03) << 6;
-		toEncode |= (primitive ? 0 : 1) << 5;
-		toEncode |= value & 0x1F;
-		this.write(toEncode);
-	}
-
-	/**
-	 * Method used to write tags for common types - be it complex or primitive.
-	 * 
-	 * @param tagClass
-	 * @param primitive
-	 * @param value -
-	 *            less significant bits(4) are encoded as tag code
-	 */
-	public void writeTag(int tagClass, boolean primitive, byte[] value) {
-
-		int toEncode = (tagClass & 0x03) << 6;
-		toEncode |= (primitive ? 0 : 1) << 5;
-		// toEncode |= value & 0x0F;
-		// FIXME: add hack here
-		this.write(toEncode);
-	}
-
-	/**
-	 * Writes length in simple or indefinite form
-	 * 
-	 * @param l
-	 * @throws IOException 
-	 */
-	public void writeLength(int v) throws IOException {
-		if(v == 0x80)
-		{
-			this.write(0x80);
-			return;
-		}
-		else if(v>0x7F)
-		{
-			//XXX: note there is super.count !!!
-			int count;
-			//long form
-			if ((v & 0xFF000000) > 0) {
-				count = 4;
-			} else if ((v & 0x00FF0000) > 0) {
-				count = 3;
-			} else if ((v & 0x0000FF00) > 0) {
-				count = 2;
-			} else {
-				count = 1;
-			}
-			this.write(count | 0x80);
-			// now we know how much bytes we need from V, for positive with MSB set
-			// on MSB-like octet, we need trailing 0x00, this L+1;
-			// FIXME: change this, tmp hack.
-			ByteBuffer bb = ByteBuffer.allocate(4);
-			bb.putInt(v);
-			bb.flip();
-			for (int c = 4 - count; c > 0; c--) {
-				bb.get();
-			}
-			byte[] dataToWrite = new byte[count];
-			bb.get(dataToWrite);
-			this.write(dataToWrite);
-			
-			
-			
-		}else
-		{	//short
-			this.write(v & 0xFF);
-		}
-
+	public void writeTag(int tagClass, boolean primitive, int tag) throws AsnException {
 		
+		if (tag < 0)
+			throw new AsnException("Tag must not be negative");
+
+		if (tag <= 30) {
+			
+			int toEncode = (tagClass & 0x03) << 6;
+			toEncode |= (primitive ? 0 : 1) << 5;
+			toEncode |= tag & 0x1F;
+			this.write(toEncode);
+		} else {
+			
+			int toEncode = (tagClass & 0x03) << 6;
+			toEncode |= (primitive ? 0 : 1) << 5;
+			toEncode |= 0x1F;
+			this.write(toEncode);
+
+			int byteArr = 8;
+			byte[] buf = new byte[byteArr];
+			int pos = byteArr;
+			while (true) {
+				int dd;
+				if (tag <= 0x7F) {
+					dd = tag;
+					if (pos != byteArr)
+						dd = dd | 0x80;
+					buf[--pos] = (byte) dd;
+					break;
+				} else {
+					dd = (tag & 0x7F);
+					tag >>= 7;
+					if (pos != byteArr)
+						dd = dd | 0x80;
+					buf[--pos] = (byte) dd;
+				}
+			}
+			this.write(buf, pos, byteArr - pos);
+		}
 	}
-
-
+	
 	/**
-	 * write Boolean with tag and length
+	 * Write the length field into the stream
+	 * Use Tag.Indefinite_Length for writing the indefinite length 
 	 * 
-	 * @param value
+	 * @param v
 	 * @throws IOException
 	 */
-	public void writeBoolean(boolean value) throws IOException {
-		writeTag(Tag.CLASS_UNIVERSAL, true, Tag.BOOLEAN);
-		writeLength(0x01);
+	public void writeLength(int v) throws IOException {
 		
+		if (v == Tag.Indefinite_Length) {
+			
+			this.write(0x80);
+			return;
+		} else if (v > 0x7F) {
+
+			int posLen = this.pos;
+			this.write(0);
+			int count = this.writeIntegerData(v);
+			this.buffer[posLen] = (byte) (count | 0x80);
+		} else { // short
+			
+			this.write(v);
+		}
+	}
+
+	/**
+	 * Start recording of primitive or constructed context with definite field
+	 * length. After content writing finishing the user must invoke
+	 * FinalizeContent() method with the parameter that is returned by this
+	 * method
+	 * 
+	 * @return
+	 */
+	public int StartContentDefiniteLength() {
+
+		int lenPos = this.pos;
+		this.write(0);
+		return lenPos;
+	}
+
+	/**
+	 * Start recording of constructed context with indefinite field length.
+	 * After content writing finishing the user must invoke
+	 * FinalizeContent() method with the parameter that is returned by this
+	 * method
+	 * 
+	 * @return
+	 */
+	public int StartContentIndefiniteLength() {
+
+		this.write(0x80);
+		return Tag.Indefinite_Length;
+	}
+	
+	/**
+	 * This method must be invoked after finishing the content writing
+	 * 
+	 * @param lenPos
+	 *            This parameter is the the return value of the
+	 *            StartContentDefiniteLength() or StartContentIndefiniteLength()
+	 *            methods
+	 */
+	public void FinalizeContent( int lenPos ) {
+
+		if (lenPos == Tag.Indefinite_Length) {
+			
+			this.write(0);
+			this.write(0);
+		} else {
+			
+			int length = this.pos - lenPos - 1;
+			if (length <= 0x7F) {
+				this.buffer[lenPos] = (byte) length;
+			} else {
+
+				int count;
+				byte[] buf = new byte[4];
+				if ((length & 0xFF000000) > 0) {
+					buf[0] = (byte)((length >> 24) & 0xFF);
+					buf[1] = (byte)((length >> 16) & 0xFF);
+					buf[2] = (byte)((length >> 8) & 0xFF);
+					buf[3] = (byte)(length & 0xFF);
+					count = 4;
+				} else if ((length & 0x00FF0000) > 0) {
+					buf[0] = (byte)((length >> 16) & 0xFF);
+					buf[1] = (byte)((length >> 8) & 0xFF);
+					buf[2] = (byte)(length & 0xFF);
+					count = 3;
+				} else if ((length & 0x0000FF00) > 0) {
+					buf[0] = (byte)((length >> 8) & 0xFF);
+					buf[1] = (byte)(length & 0xFF);
+					count = 2;
+				} else {
+					buf[0] = (byte)(length & 0xFF);
+					count = 1;
+				}
+				
+				this.checkIncreaseArray(count);
+				System.arraycopy(this.buffer, lenPos + 1, this.buffer, lenPos + 1 + count, length);
+				this.pos += count;
+				this.buffer[lenPos] = (byte) (0x80 | count);
+				for (int i1 = 0; i1 < count; i1++) {
+					this.buffer[lenPos + i1 + 1] = buf[i1];
+				}
+			}
+		}
+	}
+	
+	
+	public void writeSequence(byte[] data) throws IOException, AsnException
+	{
+
+		this.writeSequence(Tag.CLASS_UNIVERSAL, Tag.SEQUENCE, data);
+	}
+	
+	public void writeSequence(int tagClass, int tag, byte[] data) throws IOException, AsnException
+	{
+		
+		this.writeTag(tagClass, false, tag);
+		this.writeLength(data.length);
+		this.write(data);
+	}
+	
+	public int writeSequenceData(byte[] data) throws IOException, AsnException
+	{
+		
+		this.write(data);
+		return data.length;
+	}
+		
+	public void writeBoolean(boolean value) throws IOException, AsnException {
+
+		this.writeBoolean(Tag.CLASS_UNIVERSAL, Tag.BOOLEAN, value);
+	}
+	
+	public void writeBoolean(int tagClass, int tag, boolean value) throws IOException, AsnException {
+
+		this.writeTag(tagClass, true, tag);
+		writeLength(0x01);
+
 		this.writeBooleanData(value);
 	}
 
-	/**
-	 * write Boolean without tag and length
-	 * 
-	 * @param value
-	 * @throws IOException
-	 */
-	public void writeBooleanData(boolean value) throws IOException {
+	public int writeBooleanData(boolean value) throws IOException {
 
-		int V = value ? _BOOLEAN_POSITIVE : _BOOLEAN_NEGATIVE;
-		this.write(V);
-	}
-
-	/**
-	 * Write NULL with NULL tag and length
-	 * 
-	 * @throws IOException
-	 */
-	public void writeNULL() throws IOException {
-		writeTag(Tag.CLASS_UNIVERSAL, true, Tag.NULL);
-		writeLength(0x00);
-		
-		this.writeNULLData();
-	}
-
-	/**
-	 * Write NULL without tag and length
-	 * 
-	 * @throws IOException
-	 */
-	public void writeNULLData() throws IOException {
-	}
-
-
-	/**
-	 * Write Integer with tag and length
-	 * 
-	 * @param tagClass
-	 * @param tag
-	 * @param v
-	 * @throws IOException
-	 */
-	public void writeInteger(int tagClass,int tag,long v) throws IOException {
-		// TAG
-		this.writeTag(tagClass, true, tag);
-		this.doWriteInteger(v, true);
-	}
-
-	/**
-	 * Write Integer without tag and length
-	 * 
-	 * @param v
-	 * @throws IOException
-	 */
-	public void writeIntegerData(long v) throws IOException {
-		this.doWriteInteger(v, false);
+		int v = value ? _BOOLEAN_POSITIVE : _BOOLEAN_NEGATIVE;
+		this.write(v);
+		return 1;
 	}
 	
-	private void doWriteInteger(long v, boolean writeLength) throws IOException {
+	public void writeInteger(long value) throws IOException, AsnException {
+
+		this.writeInteger(Tag.CLASS_UNIVERSAL, Tag.INTEGER, value);
+	}
+
+	public void writeInteger(int tagClass, int tag, long v) throws IOException, AsnException {
+		
+		this.writeTag(tagClass, true, tag);
+
+		int lenPos = this.StartContentDefiniteLength();
+		int length = this.writeIntegerData(v);
+		this.FinalizeContent(lenPos);
+	}
+
+	public int writeIntegerData(long v) throws IOException {
+		
 		// if its positive, we need trailing 0x00
 		boolean wasPositive = v > 0;
+		long v1 = v;
 		if (!wasPositive) {
-			v = -v;
+			v1 = -v;
 		}
 		// determine how much we should write :)
 		
 		int count = 0;
-		// 0xFF FF FF FF - int boundy, hex can be up to boundry of int
-		if (v < 4294967295l) {
-			if ((v & 0xFF000000) > 0) {
-				count = 4;
-			} else if ((v & 0x00FF0000) > 0) {
-				count = 3;
-			} else if ((v & 0x0000FF00) > 0) {
-				count = 2;
-			} else {
-				count = 1;
-			}
+		if((v1 & 0xFF00000000000000L) != 0 ) {
+			count = 8;
+		} else if ((v1 & 0xFF000000000000L) != 0 ) {
+			count = 7;
+		} else if ((v1 & 0xFF0000000000L) != 0 ) {
+			count = 6;
+		} else if ((v1 & 0xFF00000000L) != 0 ) {
+			count = 5;
+		} else if ((v1 & 0xFF000000L) != 0 ) {
+			count = 4;
+		} else if ((v1 & 0xFF0000L) != 0 ) {
+			count = 3;
+		} else if ((v1 & 0xFF00L) != 0 ) {
+			count = 2;
 		} else {
-			int tmp = (int) (v >>> 32); //kill zeroz and cast
-			if ((tmp & 0xFF000000) > 0) {
-				count = 8;
-			} else if ((tmp & 0x00FF0000) > 0) {
-				count = 7;
-			} else if ((tmp & 0x0000FF00) > 0) {
-				count = 6;
-			} else {
-				count = 5;
-			}
+			count = 1;
 		}
-
-		// make the proper val;
-		if (!wasPositive) {
-			v = -v;
-		}
-		// now we know how much bytes we need from V, for positive with MSB set
-		// on MSB-like octet, we need trailing 0x00, this L+1;
-		// FIXME: change this, tmp hack.
-		// FIXME: this is possibly wrong, also use BB.get(byte[],offst,len)
+		
 		ByteBuffer bb = ByteBuffer.allocate(8);
 		bb.putLong(v);
+		byte[] dataToWrite = new byte[8];
 		bb.flip();
-		for (int c = 8 - count; c > 0; c--) {
-			bb.get();
+		bb.get(dataToWrite, 0, 8);
+		
+		int extraCount = 0;
+		if (wasPositive && (dataToWrite[8 - count] & 0x80) != 0) {
+			this.write(0);
+			extraCount = 1;
 		}
-		byte[] dataToWrite = new byte[count];
-		bb.get(dataToWrite);
-		if (wasPositive && ((dataToWrite[0] & 0x80) > 0)) {
-			if (writeLength)
-				this.writeLength(dataToWrite.length + 1);
-			this.write(0x00);
-		} else {
-			if (writeLength)
-				this.writeLength(dataToWrite.length);
-		}
-		this.write(dataToWrite);
+		this.write(dataToWrite, 8 - count, count);
+		
+		return count + extraCount;
 	}
-	public void writeInteger(long v) throws IOException 
-	{
-		writeInteger(Tag.CLASS_UNIVERSAL,Tag.INTEGER,v);
+	
+	public void writeReal(String d, int NR) throws IOException, AsnException {
+
+		this.writeReal(Tag.CLASS_UNIVERSAL, Tag.REAL, d, NR);
+	}
+	
+	public void writeReal(double d) throws IOException, AsnException {
+
+		this.writeReal(Tag.CLASS_UNIVERSAL, Tag.REAL, d);
 	}
 
-	/**
-	 * 
-	 * @param d -
-	 *            string representing double
-	 * @param NR -
-	 *            NR to be written, must match string content.
-	 * @throws AsnException
-	 * @throws IOException
-	 */
-	public void writeReal(String d, int NR) throws AsnException,
-			NumberFormatException, IOException {
+	public void writeReal(int tagClass, int tag, String d, int NR) throws IOException, AsnException {
+		
+		this.writeTag(tagClass, true, tag);
+
+		int lenPos = this.pos;
+		this.write(0);
+		int length = this.writeRealData(d, NR);
+		this.buffer[lenPos] = (byte) length;
+	}
+
+	public void writeReal(int tagClass, int tag, double d) throws IOException, AsnException {
+		
+		this.writeTag(tagClass, true, tag);
+
+		int lenPos = this.StartContentDefiniteLength();
+		this.writeRealData(d);
+		this.FinalizeContent(lenPos);
+	}
+	
+	public int writeRealData(String d, int NR) throws AsnException, NumberFormatException, IOException {
+		
 		// check?
 		Double.parseDouble(d);
 		// This is weird, BER does not allow L = 0 for zero on integer, but for
 		// real it does.... cmon
-		this.writeTag(Tag.CLASS_UNIVERSAL, true, Tag.REAL);
+
 		byte[] encoded = null;
 		try {
 			encoded = d.getBytes(_REAL_BASE10_CHARSET);
@@ -276,8 +441,6 @@ public class AsnOutputStream extends ByteArrayOutputStream {
 			throw new AsnException("Not supported yet, is it even in specs?");
 		}
 
-		this.writeLength(encoded.length + 1);
-
 		if (NR > 3 || NR < 1) {
 			throw new AsnException("NR is out of range: <0,3>");
 		}
@@ -285,27 +448,25 @@ public class AsnOutputStream extends ByteArrayOutputStream {
 
 		this.write(encoded);
 
+		return encoded.length + 1;
 	}
 
-	public void writeReal(double d) throws AsnException, IOException {
+	public int writeRealData(double d) throws AsnException, IOException {
+		
 		// This is weird, BER does not allow L = 0 for zero on integer, but for
 		// real it does.... cmon
-		this.writeTag(Tag.CLASS_UNIVERSAL, true, Tag.REAL);
 		if (d == 0) {
-			this.writeLength(0x00);
-			return;
+			return 0;
 		}
 
 		if (d == Double.POSITIVE_INFINITY) {
-			this.writeLength(0x01);
 			this.write(0x40);
-			return;
+			return 1;
 		}
 
 		if (d == Double.NEGATIVE_INFINITY) {
-			this.writeLength(0x01);
 			this.write(0x41);
-			return;
+			return 1;
 		}
 
 		// now that sucky stuff with FF,BB,EE ....
@@ -315,7 +476,6 @@ public class AsnOutputStream extends ByteArrayOutputStream {
 
 		// L: 8 for bits(however we have more +1 since exp and mantisa dont end
 		// on octet boundry), 1 for info bits
-		this.writeLength(10);
 		// get sign;
 		long bits = Double.doubleToLongBits(d);
 		// get sign bit
@@ -343,67 +503,28 @@ public class AsnOutputStream extends ByteArrayOutputStream {
 		this.write(exp);
 		this.write(mantisa);
 
-	}
-	
-	public void writeStringOctet(int tagClass, int tag, InputStream io) throws AsnException, IOException {
-		// TODO Auto-generated method stub
-		if (io.available() <= 127) {
-			// its simple :
-			this.writeTag(tagClass, true, tag);
-			this.writeLength(io.available());
-			byte[] data = new byte[io.available()];
-			io.read(data);
-			this.write(data);
-		} else {
-			this.writeTag(tagClass, false, tag);
-			// indefinite
-			this.writeLength(0x80);
-			// now lets write fractions, 127 octet chunks
-
-			int count = io.available();
-			while (count > 0) {
-
-				byte[] dataChunk = new byte[count > 127 ? 127 : count];
-				io.read(dataChunk);
-				this.writeString(dataChunk, tag);
-				count -= dataChunk.length;
-			}
-			// terminate complex
-			this.write(Tag.NULL_TAG);
-			this.write(Tag.NULL_VALUE);
-
-		}
-
-	}
-	
-	public void writeStringOctet(InputStream io) throws AsnException,
-			IOException {
-		this.writeStringOctet(Tag.CLASS_UNIVERSAL,Tag.STRING_OCTET,io);
+		return 10;
 	}
 
-	public void writeStringOctetData(InputStream io) throws AsnException, IOException {
-		// TODO Auto-generated method stub
-		if (io.available() <= 127) {
-			// its simple :
-			byte[] data = new byte[io.available()];
-			io.read(data);
-			this.write(data);
-		} else {
-			throw new AsnException("writeStringOctetData does not support octet strings more than 126 bytes length");
-		}
+	public void writeBitString(BitSet bitString) throws AsnException, IOException {
+
+		this.writeBitString(Tag.CLASS_UNIVERSAL, Tag.STRING_BIT, bitString);
 	}
 
-	public void writeStringBinary(BitSet bitString) throws AsnException, IOException {
-		//FIXME: find way to write empty bites.?
-		this.writeStringBinary(Tag.CLASS_UNIVERSAL, Tag.STRING_BIT,bitString);
+	public void writeBitString(int tagClass, int tag,BitSet bitString) throws AsnException, IOException {
+		
+		this.writeTag(tagClass, true, tag);
+
+		int lenPos = this.StartContentDefiniteLength();
+		this.writeBitStringData(bitString);
+		this.FinalizeContent(lenPos);
 	}
 
-	public void writeStringBinary(int tagClass, int tag,BitSet bitString) throws AsnException, IOException {
-		// DONT USE BitSet.size();
-		_writeStringBinary(tagClass, tag,bitString, bitString.length(), 0);
-	}
+	public int writeBitStringData(BitSet bitString) throws AsnException, IOException {
 
-	public void writeStringBinaryData(BitSet bitString) throws AsnException, IOException {
+		// TODO: we now implements the only primitive encoding here. This is
+		// enough for ss7. For constructed encoding we should add another method
+
 		int bitNumber = bitString.length();
 
 		// check if we can write it in simple form
@@ -412,90 +533,21 @@ public class AsnOutputStream extends ByteArrayOutputStream {
 		if (rest != 0) {
 			octetCount++;
 		}
-		// 126 - cause bit string has one extra octet.
-		if (octetCount <= 126) {
-			// the extra octet from bit string
-			if (rest == 0) {
-				this.write(0);
-			} else {
-				this.write(8 - rest);
-			}
 
-			// this will padd unused bits with zeros
-			for (int i = 0; i < octetCount; i++) {
-				byte byteRead = _getByte(i * 8, bitString);
-				this.write(byteRead);
-			}
-
+		// the extra octet from bit string
+		if (rest == 0) {
+			this.write(0);
 		} else {
-			throw new AsnException("writeStringBinaryData does not support bit strings more than 126 length");
+			this.write(8 - rest);
 		}
-	}
 
-	/**
-	 * 
-	 * @param bitString
-	 * @param bitNumber
-	 * @param startIndex
-	 * @param tag 
-	 * @param tagClass 
-	 * @throws AsnException
-	 * @throws IOException
-	 */
-	private void _writeStringBinary(int tagClass, int tag,BitSet bitString, int bitNumber,
-			int startIndex ) throws AsnException, IOException {
-
-		// check if we can write it in simple form
-		int octetCount = bitNumber / 8;
-		int rest = bitNumber % 8;
-		if (rest != 0) {
-			octetCount++;
+		// this will padd unused bits with zeros
+		for (int i = 0; i < octetCount; i++) {
+			byte byteRead = _getByte(i * 8, bitString);
+			this.write(byteRead);
 		}
-		// 126 - cause bit string has one extra octet.
-		if (octetCount <= 126) {
-			this.writeTag(tagClass, true, tag);
-			this.writeLength(octetCount + 1);
-			// the extra octet from bit string
-			if (rest == 0) {
-				this.write(0);
-			} else {
-				this.write(8 - rest);
-			}
-
-			// this will padd unused bits with zeros
-			for (int i = 0; i < octetCount; i++) {
-				byte byteRead = _getByte(startIndex + i * 8, bitString);
-				this.write(byteRead);
-			}
-
-		} else {
-
-			this.writeTag(tagClass, false, tag);
-			// indefinite
-			this.writeLength(0x80);
-			int count = octetCount;
-			int lastBitIndex = startIndex;
-			while (count > 0) {
-
-				int dataChunkSize = count > 126 ? 126 : count;
-
-				int localBitNum = dataChunkSize * 8;
-				if (dataChunkSize != 126) {
-					localBitNum += rest;
-					if (rest != 0) {
-						// we need to remove this, since its fake full octet,
-						// and we pass bit num.
-						localBitNum -= 8;
-					}
-				}
-				this._writeStringBinary(tagClass,tag,bitString, localBitNum, lastBitIndex);
-				lastBitIndex += dataChunkSize * 8;
-				count -= dataChunkSize;
-			}
-			// terminate complex
-			this.write(Tag.NULL_TAG);
-			this.write(Tag.NULL_VALUE);
-		}
+		
+		return octetCount;
 	}
 
 	/**
@@ -534,6 +586,162 @@ public class AsnOutputStream extends ByteArrayOutputStream {
 		return data;
 	}
 
+	public void writeOctetString(byte[] value) throws IOException, AsnException {
+
+		this.writeOctetString(Tag.CLASS_UNIVERSAL, Tag.STRING_OCTET, value);
+	}
+
+	public void writeOctetString(int tagClass, int tag, byte[] value) throws IOException, AsnException {
+
+		this.writeTag(tagClass, true, tag);
+
+		int lenPos = this.StartContentDefiniteLength();
+		this.writeOctetStringData(value);
+		this.FinalizeContent(lenPos);
+	}
+
+	public int writeOctetStringData(byte[] value) {
+
+		// TODO: we now implements the only primitive encoding here. This is
+		// enough for ss7. For constructed encoding we should add another method
+
+		this.write(value);
+		return value.length;
+	}	
+	
+	@Deprecated
+	public void writeStringOctet(int tagClass, int tag, InputStream io) throws AsnException, IOException {
+		// TODO Auto-generated method stub
+		if (io.available() <= 127) {
+			// its simple :
+			this.writeTag(tagClass, true, tag);
+			this.writeLength(io.available());
+			byte[] data = new byte[io.available()];
+			io.read(data);
+			this.write(data);
+		} else {
+			this.writeTag(tagClass, false, tag);
+			// indefinite
+			this.writeLength(0x80);
+			// now lets write fractions, 127 octet chunks
+
+			int count = io.available();
+			while (count > 0) {
+
+				byte[] dataChunk = new byte[count > 127 ? 127 : count];
+				io.read(dataChunk);
+				this.writeString(dataChunk, tag);
+				count -= dataChunk.length;
+			}
+			// terminate complex
+			this.write(Tag.NULL_TAG);
+			this.write(Tag.NULL_VALUE);
+
+		}
+
+	}
+	
+	@Deprecated
+	public void writeStringOctet(InputStream io) throws AsnException,
+			IOException {
+		this.writeStringOctet(Tag.CLASS_UNIVERSAL,Tag.STRING_OCTET,io);
+	}
+
+	@Deprecated
+	public void writeStringOctetData(InputStream io) throws AsnException, IOException {
+		// TODO Auto-generated method stub
+		if (io.available() <= 127) {
+			// its simple :
+			byte[] data = new byte[io.available()];
+			io.read(data);
+			this.write(data);
+		} else {
+			throw new AsnException("writeStringOctetData does not support octet strings more than 126 bytes length");
+		}
+	}
+
+	public void writeNull() throws IOException, AsnException {
+		this.writeNull(Tag.CLASS_UNIVERSAL, Tag.NULL);
+	}
+	
+	public void writeNull(int tagClass, int tag) throws IOException, AsnException {
+		writeTag(tagClass, true, tag);
+		writeLength(0x00);
+	}
+	
+	@Deprecated
+	public void writeNULLData() throws IOException {
+	}
+
+	public int writeNullData() {
+		return 0;
+	}
+
+	public void writeObjectIdentifier(long[] oid) throws IOException, AsnException {
+
+		this.writeObjectIdentifier(Tag.CLASS_UNIVERSAL, Tag.OBJECT_IDENTIFIER, oid);
+	}
+	
+	public void writeObjectIdentifier(int tagClass, int tag, long[] oid) throws IOException, AsnException {
+
+		this.writeTag(tagClass, true, tag);
+
+		int lenPos = this.StartContentDefiniteLength();
+		this.writeObjectIdentifierData(oid);
+		this.FinalizeContent(lenPos);
+	}
+
+	public int writeObjectIdentifierData(long[] oidLeafs) throws IOException {
+		if (oidLeafs.length < 2) {
+			return 0;
+		}
+
+		// Let us find out the length first
+		int len = 1;
+		int i;
+		for (i = 2; i < oidLeafs.length; ++i) {
+			len += getOIDLeafLength(oidLeafs[i]);
+		}
+
+		// Now add the OID bytes
+		
+		//The first two OID's
+		i = (int) (oidLeafs[0] * 40 + oidLeafs[1]);
+		this.write(0x00FF & i);
+
+		//Next OID's byte
+		for (i = 2; i < oidLeafs.length; ++i) {
+			long v = oidLeafs[i];
+			len = getOIDLeafLength(v);
+
+			for (int j = len - 1; j > 0; --j) {
+				long m = 0x0080 | (0x007F & (v >> (j * 7)));
+				this.write((int) m);
+			}
+			this.write((int) (0x007F & v));
+		}
+		
+		return len;
+	}
+	
+	private int getOIDLeafLength(long leaf) {
+		if (leaf < 0) {
+			return 10;
+		}
+
+		long l = 1;
+		int i;
+		for (i = 1; i < 9; ++i) {
+			l <<= 7;
+			if (leaf < l)
+				break;
+		}
+		return i;
+	}
+
+	
+
+	// ............................
 	public void writeStringUTF8(String data) throws AsnException, IOException {
 		byte[] dataEncoded = null;
 		try {
@@ -565,7 +773,7 @@ public class AsnOutputStream extends ByteArrayOutputStream {
 		} else {
 			this.writeTag(Tag.CLASS_UNIVERSAL, false, stringTag);
 			// indefinite
-			this.writeLength(0x80);
+			this.writeLength(Tag.Indefinite_Length);
 			// now lets write fractions, 127 octet chunks
 
 			ByteArrayInputStream bis = new ByteArrayInputStream(dataEncoded);
@@ -584,69 +792,61 @@ public class AsnOutputStream extends ByteArrayOutputStream {
 		}
 
 	}
+	// ............................
 
-	// FIXME: we need this also?
-	// public void writeReal(float d) {
-	//
-	// }
 
-	private int getOIDLeafLength(long leaf) {
-		if (leaf < 0) {
-			return 10;
-		}
-
-		long l = 1;
-		int i;
-		for (i = 1; i < 9; ++i) {
-			l <<= 7;
-			if (leaf < l)
-				break;
-		}
-		return i;
-	}
-
-	public void writeObjectIdentifier(long[] oidLeafs) throws IOException {
-		if (oidLeafs.length < 2) {
-			writeLength(0);
-			return;
-		}
-
-		// Let us find out the length first
-		int len = 1;
-		int i;
-		for (i = 2; i < oidLeafs.length; ++i) {
-			len += getOIDLeafLength(oidLeafs[i]);
-		}
-		this.writeTag(Tag.CLASS_UNIVERSAL, true/*lol*/, Tag.OBJECT_IDENTIFIER);
-		writeLength(len);
-
-		// Now add the OID bytes
-		
-		//The first two OID's
-		i = (int) (oidLeafs[0] * 40 + oidLeafs[1]);
-		this.write(0x00FF & i);
-
-		//Next OID's byte
-		for (i = 2; i < oidLeafs.length; ++i) {
-			long v = oidLeafs[i];
-			len = getOIDLeafLength(v);
-
-			for (int j = len - 1; j > 0; --j) {
-				long m = 0x0080 | (0x007F & (v >> (j * 7)));
-				this.write((int) m);
-			}
-			this.write((int) (0x007F & v));
-		}
+	@Deprecated
+	public void writeStringBinary(BitSet bitString) throws AsnException, IOException {
+		this.writeBitString(bitString);
 	}
 	
-	public void writeSequence(byte[] encodedTLV) throws IOException
-	{
-		this.writeTag(Tag.CLASS_UNIVERSAL, false, Tag.SEQUENCE);
-		this.writeLength(encodedTLV.length);
-		this.write(encodedTLV);
+	@Deprecated
+	public void writeStringBinary(int tagClass, int tag, BitSet bitString) throws AsnException, IOException {
+		this.writeBitString(tagClass, tag, bitString);
+	}
+	
+	@Deprecated
+	public void writeNULL() throws IOException, AsnException {
+		this.writeNull();
 	}
 
+	@Deprecated
+	public void writeStringBinaryData(BitSet bitString) throws AsnException, IOException {
+		this.writeBitStringData(bitString);
+	}
 
+	
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		
+		sb.append("Size=");
+		sb.append(this.pos);
+		sb.append("\n");
+		
+		byte[] bf = this.toByteArray();
+		sb.append(arrayToString(bf));
+		
+		return sb.toString();
+	}
+	
+	protected static String arrayToString(byte[] bf) {
 
+		StringBuilder sb = new StringBuilder();
+		
+		sb.append("[");
+		int i1 = 0;
+		for (byte b : bf) {
+			int ib = (b & 0xFF);
+			if (i1 == 0)
+				i1 = 1;
+			else
+				sb.append(", ");
+			sb.append(ib);
+		}
+		sb.append("]");
 
+		return sb.toString();
+	}
 }
+
