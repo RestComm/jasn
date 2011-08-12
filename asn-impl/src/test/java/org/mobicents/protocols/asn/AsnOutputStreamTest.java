@@ -2,7 +2,6 @@ package org.mobicents.protocols.asn;
 
 import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
-import java.util.BitSet;
 
 import junit.framework.TestCase;
 
@@ -16,7 +15,8 @@ import org.junit.Test;
  * 
  * @author amit bhayani
  * @author baranowb
- */
+  * @author sergey vetyutnev
+*/
 public class AsnOutputStreamTest extends TestCase {
 
 	private AsnOutputStream output;
@@ -305,7 +305,7 @@ public class AsnOutputStreamTest extends TestCase {
 		// 11110000 11110000 111101xx //0x0F accoring to book...
 		byte[] expected = new byte[] { 0x03, 0x04, 0x02, (byte) 0xF0,
 				(byte) 0xF0, (byte) 0xF4 };
-		BitSet bs = new BitSet();
+		BitSetStrictLength bs = new BitSetStrictLength(22);
 		bs.set(0);
 		bs.set(1);
 		bs.set(2);
@@ -329,7 +329,7 @@ public class AsnOutputStreamTest extends TestCase {
 		// 11110000 11110000 111101xx //0x0F accoring to book...
 		byte[] expected = new byte[] { 0x02, (byte) 0xF0,
 				(byte) 0xF0, (byte) 0xF4 };
-		BitSet bs = new BitSet();
+		BitSetStrictLength bs = new BitSetStrictLength(22);
 		bs.set(0);
 		bs.set(1);
 		bs.set(2);

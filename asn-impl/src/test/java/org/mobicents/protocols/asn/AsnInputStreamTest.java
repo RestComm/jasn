@@ -1,6 +1,5 @@
 package org.mobicents.protocols.asn;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.BitSet;
@@ -17,6 +16,7 @@ import org.junit.Test;
  * 
  * @author amit bhayani
  * @author baranowb
+ * @author sergey vetyutnev
  */
 public class AsnInputStreamTest extends TestCase {
 
@@ -114,6 +114,33 @@ public class AsnInputStreamTest extends TestCase {
 		assertEquals(1, data[2]);
 		assertEquals(2, data[3]);
 		assertEquals(3, data[4]);
+	}
+	
+	@Test
+	public void testAdvanceElement() throws Exception {
+		
+		AsnInputStream asnIs = new AsnInputStream(definiteSeqData());
+		int tag = asnIs.readTag();
+		asnIs.advanceElement();
+		assertEquals(16, tag);
+		assertEquals(0, asnIs.available());
+
+		asnIs = new AsnInputStream(definiteSeqData());
+		tag = asnIs.readTag();
+		int length = asnIs.readLength(); 
+		asnIs.advanceElementData(length);
+		assertEquals(0, asnIs.available());
+
+		asnIs = new AsnInputStream(indefiniteSeqData());
+		tag = asnIs.readTag();
+		asnIs.advanceElement();
+		assertEquals(0, asnIs.available());
+
+		asnIs = new AsnInputStream(indefiniteSeqData());
+		tag = asnIs.readTag();
+		length = asnIs.readLength(); 
+		asnIs.advanceElementData(length);
+		assertEquals(0, asnIs.available());
 	}
 	
 	private byte[] definiteSeqData() {

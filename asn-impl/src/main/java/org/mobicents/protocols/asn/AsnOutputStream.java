@@ -344,7 +344,7 @@ public class AsnOutputStream {
 		this.writeTag(tagClass, true, tag);
 
 		int lenPos = this.StartContentDefiniteLength();
-		int length = this.writeIntegerData(v);
+		this.writeIntegerData(v);
 		this.FinalizeContent(lenPos);
 	}
 
@@ -506,13 +506,13 @@ public class AsnOutputStream {
 		return 10;
 	}
 
-	public void writeBitString(BitSet bitString) throws AsnException, IOException {
+	public void writeBitString(BitSetStrictLength bitString) throws AsnException, IOException {
 
 		this.writeBitString(Tag.CLASS_UNIVERSAL, Tag.STRING_BIT, bitString);
 	}
 
-	public void writeBitString(int tagClass, int tag,BitSet bitString) throws AsnException, IOException {
-		
+	public void writeBitString(int tagClass, int tag, BitSetStrictLength bitString) throws AsnException, IOException {
+
 		this.writeTag(tagClass, true, tag);
 
 		int lenPos = this.StartContentDefiniteLength();
@@ -520,12 +520,9 @@ public class AsnOutputStream {
 		this.FinalizeContent(lenPos);
 	}
 
-	public int writeBitStringData(BitSet bitString) throws AsnException, IOException {
+	public int writeBitStringData(BitSetStrictLength bitString) throws AsnException, IOException {
 
-		// TODO: we now implements the only primitive encoding here. This is
-		// enough for ss7. For constructed encoding we should add another method
-
-		int bitNumber = bitString.length();
+		int bitNumber = bitString.getStrictLength();
 
 		// check if we can write it in simple form
 		int octetCount = bitNumber / 8;
@@ -559,7 +556,7 @@ public class AsnOutputStream {
 	 * @return
 	 * @throws AsnException
 	 */
-	private static byte _getByte(int startIndex, BitSet set)
+	private static byte _getByte(int startIndex, BitSetStrictLength set)
 			throws AsnException {
 
 		int count = 8;
@@ -797,12 +794,22 @@ public class AsnOutputStream {
 
 	@Deprecated
 	public void writeStringBinary(BitSet bitString) throws AsnException, IOException {
-		this.writeBitString(bitString);
+		int length = bitString.length();
+		BitSetStrictLength bs = new BitSetStrictLength(length);
+		for (int i1 = 0; i1 < length; i1++) {
+			bs.set(i1, bitString.get(i1));
+		}
+		this.writeBitString(bs);
 	}
 	
 	@Deprecated
 	public void writeStringBinary(int tagClass, int tag, BitSet bitString) throws AsnException, IOException {
-		this.writeBitString(tagClass, tag, bitString);
+		int length = bitString.length();
+		BitSetStrictLength bs = new BitSetStrictLength(length);
+		for (int i1 = 0; i1 < length; i1++) {
+			bs.set(i1, bitString.get(i1));
+		}
+		this.writeBitString(tagClass, tag, bs);
 	}
 	
 	@Deprecated
@@ -812,7 +819,12 @@ public class AsnOutputStream {
 
 	@Deprecated
 	public void writeStringBinaryData(BitSet bitString) throws AsnException, IOException {
-		this.writeBitStringData(bitString);
+		int length = bitString.length();
+		BitSetStrictLength bs = new BitSetStrictLength(length);
+		for (int i1 = 0; i1 < length; i1++) {
+			bs.set(i1, bitString.get(i1));
+		}
+		this.writeBitStringData(bs);
 	}
 
 	

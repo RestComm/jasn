@@ -409,7 +409,31 @@ public class AsnInputStream {
 				this.advance(length);
 		}
 	}
-
+	
+	/**
+	 * Skip length and content fields of primitive and constructed element (definite and indefinite length supported)
+	 * 
+	 * @throws IOException
+	 * @throws AsnException
+	 */
+	public void advanceElement() throws IOException, AsnException {
+		int length = this.readLength();
+		this.advanceElementData(length);
+	}
+	
+	/**
+	 * Skip content field of primitive and constructed element (definite and indefinite length supported)
+	 * 
+	 * @param length
+	 * @throws IOException
+	 * @throws AsnException
+	 */
+	public void advanceElementData(int length) throws IOException, AsnException {
+		if( length==Tag.Indefinite_Length )
+			this.advanceIndefiniteLength();
+		else
+			this.advance(length);
+	}
 	
 	public boolean readBoolean() throws AsnException, IOException {
 		
@@ -609,17 +633,26 @@ public class AsnInputStream {
 		}
 	}
 
+	public BitSetStrictLength readBitString() throws AsnException, IOException {
+		
+		int length = this.readLength();
+		return this.readBitStringData(length);
+	}
+	
+	public BitSetStrictLength readBitStringData(int length) throws AsnException, IOException {
+
+		BitSetStrictLength bitSet = new BitSetStrictLength(0);
+		int bitCount = this._readBitString(bitSet, length, 0);
+		bitSet.setStrictLength(bitCount);
+		
+		return bitSet;
+	}
+
 	@Deprecated
 	public void readBitString(BitSet bitSet) throws AsnException, IOException {
 		
 		int length = this.readLength();
 		this.readBitStringData(bitSet, length);
-	}
-
-	public BitSet readBitString() throws AsnException, IOException {
-		
-		int length = this.readLength();
-		return this.readBitStringData(length);
 	}
 
 	@Deprecated
@@ -635,13 +668,6 @@ public class AsnInputStream {
 			this.pCBit = 1;
 		
 		this._readBitString(bitSet, length, 0);
-	}
-	
-	public BitSet readBitStringData(int length) throws AsnException, IOException {
-
-		BitSet bitSet = new BitSet();
-		this._readBitString(bitSet, length, 0);
-		return bitSet;
 	}
 
 	private int _readBitString(BitSet bitSet, int length, int counter) throws AsnException,
@@ -714,8 +740,8 @@ public class AsnInputStream {
 					counter = _readBitString(bitSet, length2, counter);
 				}
 			}
+			return counter;
 		}
-		return counter;
 	}
 	
 	public byte[] readOctetString() throws AsnException, IOException {
