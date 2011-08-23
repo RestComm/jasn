@@ -609,32 +609,34 @@ public class AsnOutputStream {
 	@Deprecated
 	public void writeStringOctet(int tagClass, int tag, InputStream io) throws AsnException, IOException {
 		// TODO Auto-generated method stub
-		if (io.available() <= 127) {
-			// its simple :
-			this.writeTag(tagClass, true, tag);
-			this.writeLength(io.available());
-			byte[] data = new byte[io.available()];
-			io.read(data);
-			this.write(data);
-		} else {
-			this.writeTag(tagClass, false, tag);
-			// indefinite
-			this.writeLength(0x80);
-			// now lets write fractions, 127 octet chunks
+		// if (io.available() <= 127) {
 
-			int count = io.available();
-			while (count > 0) {
+		// its simple :
+		this.writeTag(tagClass, true, tag);
+		this.writeLength(io.available());
+		byte[] data = new byte[io.available()];
+		io.read(data);
+		this.write(data);
 
-				byte[] dataChunk = new byte[count > 127 ? 127 : count];
-				io.read(dataChunk);
-				this.writeString(dataChunk, tag);
-				count -= dataChunk.length;
-			}
-			// terminate complex
-			this.write(Tag.NULL_TAG);
-			this.write(Tag.NULL_VALUE);
-
-		}
+		// } else {
+		// this.writeTag(tagClass, false, tag);
+		// // indefinite
+		// this.writeLength(0x80);
+		// // now lets write fractions, 127 octet chunks
+		//
+		// int count = io.available();
+		// while (count > 0) {
+		//
+		// byte[] dataChunk = new byte[count > 127 ? 127 : count];
+		// io.read(dataChunk);
+		// this.writeString(dataChunk, tag);
+		// count -= dataChunk.length;
+		// }
+		// // terminate complex
+		// this.write(Tag.NULL_TAG);
+		// this.write(Tag.NULL_VALUE);
+		//
+		// }
 
 	}
 	
@@ -740,57 +742,79 @@ public class AsnOutputStream {
 
 	// ............................
 	public void writeStringUTF8(String data) throws AsnException, IOException {
+
+		this.writeStringUTF8(Tag.CLASS_UNIVERSAL, Tag.STRING_UTF8, data);
+	}
+
+	public void writeStringUTF8(int tagClass, int tag, String data) throws IOException, AsnException {
+
+		this.writeTag(tagClass, true, tag);
+
+		int lenPos = this.StartContentDefiniteLength();
+		this.writeStringUTF8Data(data);
+		this.FinalizeContent(lenPos);
+	}
+
+	public void writeStringUTF8Data(String data) throws IOException, AsnException {
+
 		byte[] dataEncoded = null;
 		try {
 			dataEncoded = data.getBytes(BERStatics.STRING_UTF8_ENCODING);
 		} catch (UnsupportedEncodingException e) {
 			throw new AsnException(e);
 		}
-		writeString(dataEncoded, Tag.STRING_UTF8);
+		this.write(dataEncoded);
 	}
 
 	public void writeStringIA5(String data) throws AsnException, IOException {
+
+		this.writeStringIA5(Tag.CLASS_UNIVERSAL, Tag.STRING_IA5, data);
+	}
+
+	public void writeStringIA5(int tagClass, int tag, String data) throws IOException, AsnException {
+
+		this.writeTag(tagClass, true, tag);
+
+		int lenPos = this.StartContentDefiniteLength();
+		this.writeStringIA5Data(data);
+		this.FinalizeContent(lenPos);
+	}
+
+	public void writeStringIA5Data(String data) throws IOException, AsnException {
+
 		byte[] dataEncoded = null;
 		try {
 			dataEncoded = data.getBytes(BERStatics.STRING_IA5_ENCODING);
 		} catch (UnsupportedEncodingException e) {
 			throw new AsnException(e);
 		}
-		writeString(dataEncoded, Tag.STRING_IA5);
+		this.write(dataEncoded);
 	}
 
-	private void writeString(byte[] dataEncoded, int stringTag)
-			throws AsnException, IOException {
+	public void writeStringGraphic(String data) throws AsnException, IOException {
 
-		if (dataEncoded.length <= 127) {
-			// its simple :
-			this.writeTag(Tag.CLASS_UNIVERSAL, true, stringTag);
-			this.writeLength(dataEncoded.length);
-			this.write(dataEncoded);
-		} else {
-			this.writeTag(Tag.CLASS_UNIVERSAL, false, stringTag);
-			// indefinite
-			this.writeLength(Tag.Indefinite_Length);
-			// now lets write fractions, 127 octet chunks
+		this.writeStringIA5(Tag.CLASS_UNIVERSAL, Tag.STRING_GRAPHIC, data);
+	}
 
-			ByteArrayInputStream bis = new ByteArrayInputStream(dataEncoded);
-			int count = bis.available();
-			while (count > 0) {
+	public void writeStringGraphic(int tagClass, int tag, String data) throws IOException, AsnException {
 
-				byte[] dataChunk = new byte[count > 127 ? 127 : count];
-				bis.read(dataChunk);
-				this.writeString(dataChunk, stringTag);
-				count -= dataChunk.length;
-			}
-			// terminate complex
-			this.write(Tag.NULL_TAG);
-			this.write(Tag.NULL_VALUE);
+		this.writeTag(tagClass, true, tag);
 
+		int lenPos = this.StartContentDefiniteLength();
+		this.writeStringIA5Data(data);
+		this.FinalizeContent(lenPos);
+	}
+
+	public void writeStringGraphicData(String data) throws IOException, AsnException {
+
+		byte[] dataEncoded = null;
+		try {
+			dataEncoded = data.getBytes(BERStatics.STRING_IA5_ENCODING);
+		} catch (UnsupportedEncodingException e) {
+			throw new AsnException(e);
 		}
-
+		this.write(dataEncoded);
 	}
-	// ............................
-
 
 	@Deprecated
 	public void writeStringBinary(BitSet bitString) throws AsnException, IOException {

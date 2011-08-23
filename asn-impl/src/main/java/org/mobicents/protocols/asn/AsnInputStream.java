@@ -940,157 +940,62 @@ public class AsnInputStream {
 		return readString(BERStatics.STRING_UTF8_ENCODING, Tag.STRING_UTF8, length);
 	}
 
-	
-	// ...............................
+	public String readGraphicString() throws AsnException, IOException {
+
+		int length = readLength();
+		return readString(BERStatics.STRING_IA5_ENCODING, Tag.STRING_GRAPHIC, length);
+	}
+
+	public String readGraphicStringData(int length) throws AsnException, IOException {
+
+		return readString(BERStatics.STRING_IA5_ENCODING, Tag.STRING_GRAPHIC, length);
+	}
+
 	private String readString(String charset, int tagValue, int length) throws IOException,
 			AsnException {
-		// TODO: check string decoding
-
-		if (tagClass != Tag.CLASS_UNIVERSAL) {
-			throw new AsnException(
-					"Wrong tag class for IA5 string, should be universal["
-							+ Tag.CLASS_UNIVERSAL + "]: " + tagClass);
-		}
-
-		// NOTE: this is required since we read tag and length before going into
-		// recursive function
-		//
-
-		// check
-		// constructed
+		
 		if (pCBit == 0) {
-			// prmitive
-			// check L
-			if ((length & 0x80) == 0) {
-				// short form
-				ByteArrayOutputStream bos = new ByteArrayOutputStream(length);
-				this.fillOutputStream(bos, length);
-				String s = new String(bos.toByteArray(), charset);
-				return s;
-			} else {
-				// long form
-				/*
-				 * we can have up to 126 octets to store total L.... a biggie :)
-				 * 2,7430620343968443416279681255936e+303 - dont think java can
-				 * handle that....
-				 */
-				// this can blow....
-				ByteArrayOutputStream bos = new ByteArrayOutputStream(
-						length & 0x7F);
-				this.fillOutputStream(bos, length & 0x7F);
-				// now we have bytes representing length in table;
-				byte[] lengthBytes = bos.toByteArray();// this is copy
-				// TODO: implement this
-				// return null;
-				throw new UnsupportedOperationException();
-
-			}
-
-			// this.fillOutputStream(stream, length)
+			byte[] buf = new byte[length];
+			int readCnt = this.read(buf);
+			if (readCnt < length)
+				throw new AsnException("Error decoding string fieald: not enough data in the stream");
+			
+			String s = new String(buf, charset);
+			return s;
 		} else {
-			// constructed
-			if (length != Tag.Indefinite_Length) {
-				throw new AsnException(
-						"The length field of Constructed IA5String is not 0x80");
-			}
-			// its case: T L [TLV TLV TL[TLV TLV 0 0] 0 0]
-
 			ByteArrayOutputStream bos = new ByteArrayOutputStream();
-			this.readConstructedString(bos, tagValue);
+			this.readConstructedString(bos, tagValue, length);
+
 			String s = new String(bos.toByteArray(), charset);
 			return s;
 		}
 	}
 
-	/**
-	 * Reads string from constructed form, it calls itself as many times as
-	 * needed to get full content of string
-	 * 
-	 * @param bos
-	 * @param parentTag -
-	 *            tag of parrent, this will be used to check if contents are
-	 *            proper.
-	 * @throws AsnException
-	 * @throws IOException
-	 */
-	private void readConstructedString(ByteArrayOutputStream bos, int parentTag)
+	private void readConstructedString(ByteArrayOutputStream bos, int parentTag, int length)
 			throws AsnException, IOException {
 
-		while (_readConstructedString(bos, parentTag)) {
-
-		}
-	}
-
-	private boolean _readConstructedString(ByteArrayOutputStream bos,
-			int parentTag) throws AsnException, IOException {
-		// this local tag values are not stored in local vars
-		int localTag = this.readTag();
-		int localLength = this.readLength();
-		// check for null, this is stop condition for this function :)
-		if (localLength == 0x00 && localTag == 0x00) {
-			// do nothing
-			return false;
-		}
-
-		// check tag class
-		if (tagClass != Tag.CLASS_UNIVERSAL) {
-			throw new AsnException(
-					"Wrong tag class for IA5 string, should be universal["
-							+ Tag.CLASS_UNIVERSAL + "]: " + tagClass);
-		}
-		localTag = localTag & Tag.TAG_MASK;
-		if (parentTag != localTag) {
-			throw new AsnException("Parent tag: " + parentTag
-					+ ", does not match member tag: " + localTag);
-		}
-
-		// ok, now we have to do all the checks on tag content
-		if (pCBit == 0) {
-			// primitive
-			// check L
-			if ((localLength & 0x80) == 0) {
-				// read bytes
-				this.fillOutputStream(bos, localLength);
-				// call again
-				// this.readConstructedString(bos, parentTag);
-				return true;
+		AsnInputStream ais = this.readSequenceStreamData(length);		
+		
+		while(true) {
+			if (ais.available() == 0)
+				break;
+			
+			int localTag = ais.readTag();
+			if (parentTag != localTag)
+				throw new AsnException("Error decoding string fieald: Parent tag=" + parentTag + ", does not match member tag=" + localTag);
+			
+			int localLength = ais.readLength();
+			if (ais.pCBit == 0) {
+				byte[] buf = new byte[localLength];
+				int readCnt = ais.read(buf);
+				if (readCnt < localLength)
+					throw new AsnException("Error decoding string fieald: not enough data in the stream");
+				bos.write(buf);
 			} else {
-				// long form
-				/*
-				 * we can have up to 126 octets to store total L.... a biggie :)
-				 * 2,7430620343968443416279681255936e+303 - dont think java can
-				 * handle that....
-				 */
-				// this can blow....
-				// ByteArrayOutputStream bos = new ByteArrayOutputStream(length
-				// & 0x7F);
-				// this.fillOutputStream(bos, length & 0x7F);
-				// //now we have bytes representing length in table;
-				// byte[] lengthBytes = bos.toByteArray();//this is copy
-				throw new UnsupportedOperationException();
-				// return true;
-
+				ais.readConstructedString(bos, parentTag, localLength);
 			}
-
-			// this.fillOutputStream(stream, length)
-		} else {
-
-			// constructed & again
-			if (localLength != Tag.Indefinite_Length) {
-				throw new AsnException(
-						"The length field of Constructed IA5String is not 0x80");
-			}
-			// its case: T L [TLV TLV TL[TLV TLV 0 0] 0 0] again, cmon....
-			// this.readConstructedString(bos, parentTag);
-			while (this._readConstructedString(bos, parentTag)) {
-				// keep spining.
-			}
-			// this call is finished, but maybe someone up can do more
-			return true;
 		}
 	}
-	// ...............................
-
 	
 	@Override
 	public String toString() {

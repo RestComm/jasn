@@ -1,6 +1,5 @@
 package org.mobicents.protocols.asn;
 
-import java.io.ByteArrayInputStream;
 import java.util.Arrays;
 
 import junit.framework.TestCase;
@@ -46,7 +45,7 @@ public class ExternalTest extends TestCase {
 				(byte) 0x81, 0x07, (byte) 0x91, 0x13, 0x26, (byte) 0x98,
 				(byte) 0x86, 0x03, (byte) 0xf0, 0x00, 0x00 };
 
-		AsnInputStream asin = new AsnInputStream(new ByteArrayInputStream(data));
+		AsnInputStream asin = new AsnInputStream(data);
 		
 		int tag = asin.readTag();
 		

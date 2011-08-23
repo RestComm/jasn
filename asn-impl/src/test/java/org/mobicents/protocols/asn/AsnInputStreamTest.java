@@ -607,6 +607,7 @@ public class AsnInputStreamTest extends TestCase {
 		bos.write(data);
 
 		byte[] bb = bos.toByteArray();
+		
 		AsnInputStream asnIs = new AsnInputStream(bb);
 		int tag = asnIs.readTag();
 		assertEquals(Tag.CLASS_UNIVERSAL, asnIs.getTagClass());
@@ -668,6 +669,57 @@ public class AsnInputStreamTest extends TestCase {
 		bos.write(Tag.NULL_VALUE);
 
 		byte[] bb = bos.toByteArray();
+		AsnInputStream asnIs = new AsnInputStream(bb);
+		int tag = asnIs.readTag();
+
+		assertEquals(Tag.CLASS_UNIVERSAL, asnIs.getTagClass());
+		assertEquals(false, asnIs.isTagPrimitive());
+		assertEquals(Tag.STRING_IA5, tag);
+		String readData = asnIs.readIA5String();
+		assertEquals(resultString, readData);
+	}
+
+	@Test
+	public void testIA5StringIndefinite_1D() throws Exception {
+		// ACEace$}
+		String dataString = "ACEace$}";
+		String resultString = dataString + dataString + dataString + dataString;
+		byte[] data = new byte[] { 0x41, 0x43, 0x45, 0x61, 0x63, 0x65, 0x24,
+				0x7D
+
+		};
+
+		// we want - definite length
+		// TL [TL[TLV TLV] TLV TLV]
+
+		AsnOutputStream aos = new AsnOutputStream();
+		aos.writeTag(Tag.CLASS_UNIVERSAL, false, Tag.STRING_IA5);
+		int pos1 = aos.StartContentDefiniteLength();		
+
+		aos.writeTag(Tag.CLASS_UNIVERSAL, false, Tag.STRING_IA5);
+		int pos2 = aos.StartContentDefiniteLength();
+
+		aos.writeTag(Tag.CLASS_UNIVERSAL, true, Tag.STRING_IA5);
+		aos.writeLength(data.length);
+		aos.write(data);
+
+		aos.writeTag(Tag.CLASS_UNIVERSAL, true, Tag.STRING_IA5);
+		aos.writeLength(data.length);
+		aos.write(data);
+		
+		aos.FinalizeContent(pos2);
+
+		aos.writeTag(Tag.CLASS_UNIVERSAL, true, Tag.STRING_IA5);
+		aos.writeLength(data.length);
+		aos.write(data);
+
+		aos.writeTag(Tag.CLASS_UNIVERSAL, true, Tag.STRING_IA5);
+		aos.writeLength(data.length);
+		aos.write(data);
+		
+		aos.FinalizeContent(pos1);
+		
+		byte[] bb = aos.toByteArray();
 		AsnInputStream asnIs = new AsnInputStream(bb);
 		int tag = asnIs.readTag();
 

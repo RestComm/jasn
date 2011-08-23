@@ -3,10 +3,7 @@
  */
 package org.mobicents.protocols.asn;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.BitSet;
 
 /**
  * Represents external type, should be extended to allow getting real type of
@@ -28,6 +25,7 @@ import java.util.BitSet;
  * 
  * @author baranowb
  * @author amit bhayani
+ * @author sergey vetyutnev
  * 
  */
 public class External {
@@ -66,7 +64,7 @@ public class External {
 	// actual vals
 	protected long[] oidValue = null;
 	protected long indirectReference = 0;
-	protected Object objDescriptorValue = null;
+	protected String objDescriptorValue = null;
 
 	// ENCoDING
 	private boolean asn = false;
@@ -75,11 +73,24 @@ public class External {
 
 	// data in binary form for ASN and octet string
 	private byte[] data;
-	private BitSet bitDataString;
+	private BitSetStrictLength bitDataString;
 
 	//FIXME: ensure structure from file and if it does not allow more than one type of data, enforce that!
 	
 	public void decode(AsnInputStream ais) throws AsnException {
+		
+		this.oid = false;
+		this.integer = false;
+		this.objDescriptor = false;
+		this.oidValue = null;
+		this.indirectReference = 0;
+		this.objDescriptorValue = null;
+		this.asn = false;
+		this.octet = false;
+		this.arbitrary = false;
+		this.data = null;
+		this.bitDataString = null;
+		
 		try {
 
 			// The definition of EXTERNAL is
@@ -95,134 +106,107 @@ public class External {
 			//
 			//			
 
-			byte[] sequence = ais.readSequence();
-
-			AsnInputStream localAsnIS = new AsnInputStream(
-					new ByteArrayInputStream(sequence));
-			int tag;
-			int len;
-			while (localAsnIS.available() > 0) {
-				tag = localAsnIS.readTag();
-
-				// we can have one of
-				if (tag == Tag.OBJECT_IDENTIFIER) {
-
-					this.oidValue = localAsnIS.readObjectIdentifier();
-					this.setOid(true);
-
-				} else if (tag == Tag.INTEGER) {
-					this.indirectReference = localAsnIS.readInteger();
-					this.setInteger(true);
-				} else if (tag == Tag.OBJECT_DESCRIPTOR) {
-					throw new AsnException();
-				} else {
-					throw new AsnException("Unrecognized tag value: " + tag);
-				}
-
-				// read encoding
-				tag = localAsnIS.readTag();
-				len = localAsnIS.readLength();
-
-				if (tag == External._TAG_ASN) {
-					setAsn(true);
-					// this we dont decode...., we have no idea what is realy
-					// there, might be simple type...
-					// or app specific....
-					data = new byte[len];
-					localAsnIS.read(data);
-
-				} else if (tag == External._TAG_OCTET_ALIGNED) {
-					setOctet(true);
-					ByteArrayOutputStream bos = new ByteArrayOutputStream();
-					localAsnIS.readOctetString(bos);
-					setEncodeType(bos.toByteArray());
-				} else if (tag == External._TAG_ARBITRARY) {
-					setArbitrary(true);
-					this.bitDataString = new BitSet();
-					this.setEncodeBitStringType(this.bitDataString);
-					tag = localAsnIS.readTag();
-					if(tag != Tag.STRING_BIT)
-					{
-						throw new AsnException("Wrong tag value '"+tag+"' expected '"+Tag.STRING_BIT+"'");
+			AsnInputStream localAsnIS = ais.readSequenceStream();
+			
+			while( true ) {
+				if (localAsnIS.available() == 0)
+					break;
+				
+				int tag = localAsnIS.readTag();
+				if (localAsnIS.getTagClass() == Tag.CLASS_UNIVERSAL) {
+					switch(tag) {
+					case Tag.INTEGER:
+						this.indirectReference = localAsnIS.readInteger();
+						this.setInteger(true);
+						break;
+						
+					case Tag.OBJECT_IDENTIFIER:
+						this.oidValue = localAsnIS.readObjectIdentifier();
+						this.setOid(true);
+						break;
+						
+					case Tag.OBJECT_DESCRIPTOR:
+						this.objDescriptorValue = localAsnIS.readGraphicString();
+						this.setObjDescriptor(true);
+						break;
+						
+					default:
+						throw new AsnException("Error while decoding External: Unrecognized tag value=" + tag + ", tagClass=" + localAsnIS.getTagClass());
 					}
-					BitSet bitSet = new BitSet();
-					localAsnIS.readBitString(bitSet);
-					this.setEncodeBitStringType(bitSet);
+				} else if (localAsnIS.getTagClass() == Tag.CLASS_CONTEXT_SPECIFIC) {
+					
+					switch(tag) {
+					case External._TAG_ASN:
+						this.data = localAsnIS.readSequence();
+						this.setAsn(true);
+						break;
+						
+					case External._TAG_OCTET_ALIGNED:
+						this.setEncodeType(localAsnIS.readOctetString());
+						setOctet(true);
+						break;
+						
+					case External._TAG_ARBITRARY:
+						this.setEncodeBitStringType(localAsnIS.readBitString());
+						setArbitrary(true);
+						break;
+						
+					default:
+						throw new AsnException("Error while decoding External: Unrecognized tag value=" + tag + ", tagClass=" + localAsnIS.getTagClass());
+					}
+
+					// check: this field  must be the last
+					if (localAsnIS.available() != 0)
+						throw new AsnException("Error while decoding External: data field must be the last");
+
 				} else {
-					throw new AsnException();
+					throw new AsnException("Error while decoding External: Unrecognized tag value=" + tag + ", tagClass=" + localAsnIS.getTagClass());
 				}
-
 			}
-
 		} catch (IOException e) {
-			throw new AsnException(e);
+			throw new AsnException("IOException while decoding External: " + e.getMessage(), e);
 		}
 	}
 
 	public void encode(AsnOutputStream aos) throws AsnException {
-		try {
-			// something to do encoding
-			AsnOutputStream localOutput = new AsnOutputStream();
-			if (oid) {
-				localOutput.writeObjectIdentifier(this.oidValue);
-			} else if (integer) {
-				// FIXME: remove cast, now it takes only int, should take long
-				localOutput.writeInteger((int) this.indirectReference);
-			} else if (objDescriptor) {
-				throw new AsnException();
-			} else {
-				throw new AsnException();
-			}
 
-			// told, you, mind blowing!
+		this.encode(aos, Tag.CLASS_UNIVERSAL, Tag.EXTERNAL);
+	}
+	
+	public void encode(AsnOutputStream aos, int tagClass, int tag) throws AsnException {
+
+		if( !this.oid && !this.integer )
+			throw new AsnException("Error while encoding External: oid value or integer value must be definite");
+		if( !this.asn && !this.octet && !this.arbitrary )
+			throw new AsnException("Error while encoding External: asn value, octect value or arbitrary value must be definite");
+		
+		try {
+			
+			aos.writeTag(tagClass, false, tag);
+			int pos1 = aos.StartContentDefiniteLength();
+			
+			// something to do encoding
+			if (this.oid)
+				aos.writeObjectIdentifier(this.oidValue);
+			if (this.integer)
+				aos.writeInteger(this.indirectReference);
+			if (this.objDescriptor)
+				aos.writeStringGraphic(Tag.CLASS_UNIVERSAL, Tag.OBJECT_DESCRIPTOR, this.objDescriptorValue);
 
 			if (asn) {
-				byte[] childData = getEncodeType();
-				localOutput.writeTag(_TAG_ASN_CLASS, _TAG_ASN_PC_PRIMITIVE,
-						_TAG_ASN);
-				localOutput.writeLength(childData.length);
-				localOutput.write(childData);
-				// childData = localOutput.toByteArray();
-				// localOutput.reset();
+				byte[] childData = this.getEncodeType();
+				aos.writeTag(Tag.CLASS_CONTEXT_SPECIFIC, false, _TAG_ASN);
+				aos.writeLength(childData.length);
+				aos.write(childData);
 			} else if (octet) {
-				byte[] childData = getEncodeType();
-				// get child class.... I think its done like that....
-				boolean childConstructor = ((childData[0] & 0x20) >> 5) == Tag.PC_PRIMITIVITE;
-				localOutput.writeTag(_TAG_OCTET_ALIGNED_CLASS,
-						childConstructor, _TAG_OCTET_ALIGNED);
-				localOutput.writeLength(childData.length);
-				localOutput.write(childData);
-				// childData = localOutput.toByteArray();
-				// localOutput.reset();
+				byte[] childData = this.getEncodeType();
+				aos.writeOctetString(Tag.CLASS_CONTEXT_SPECIFIC, _TAG_OCTET_ALIGNED, childData);
 			} else if (arbitrary) {
-
-				AsnOutputStream _bitStrinAos = new AsnOutputStream();
-				_bitStrinAos.writeStringBinary(this.bitDataString);
-				byte[] childData = _bitStrinAos.toByteArray();
-				boolean childConstructor = ((childData[0] & 0x20) >> 5) == Tag.PC_PRIMITIVITE;
-				localOutput.writeTag(_TAG_ARBITRARY_CLASS, childConstructor,
-						_TAG_ARBITRARY);
-				localOutput.writeLength(childData.length);
-				localOutput.write(childData);
-				// childData = localOutput.toByteArray();
-				// localOutput.reset();
-			} else {
-				throw new AsnException();
+				BitSetStrictLength bs = this.bitDataString;
+				aos.writeBitString(Tag.CLASS_CONTEXT_SPECIFIC, _TAG_ARBITRARY, bs);
 			}
-
-			byte[] externalChildData = localOutput.toByteArray();
-
-			// Write the UserInformation Tag and length
-			aos.writeTag(Tag.CLASS_UNIVERSAL, false, Tag.EXTERNAL);
-			aos.writeLength(externalChildData.length);
-
-			// Write the Sequence Tag and length
-			// aos.writeTag(Tag.CLASS_UNIVERSAL, true, Tag.SEQUENCE);
-			// aos.writeLength(externalChildData.length);
-
-			// Write actual Data now
-			aos.write(externalChildData);
-			return;
+			
+			aos.FinalizeContent(pos1);
 		} catch (IOException e) {
 			throw new AsnException(e);
 		}
@@ -236,11 +220,11 @@ public class External {
 		this.data = data;
 	}
 
-	public BitSet getEncodeBitStringType() throws AsnException {
-		return (BitSet) bitDataString.clone();
+	public BitSetStrictLength getEncodeBitStringType() throws AsnException {
+		return (BitSetStrictLength) bitDataString;
 	}
 
-	public void setEncodeBitStringType(BitSet data) {
+	public void setEncodeBitStringType(BitSetStrictLength data) {
 		this.bitDataString = data;
 		this.setArbitrary(true);
 	}
@@ -258,10 +242,10 @@ public class External {
 	 */
 	public void setOid(boolean oid) {
 		this.oid = oid;
-		if (oid) {
-			setInteger(false);
-			setObjDescriptor(false);
-		}
+//		if (oid) {
+//			setInteger(false);
+//			setObjDescriptor(false);
+//		}
 	}
 
 	/**
@@ -277,10 +261,10 @@ public class External {
 	 */
 	public void setInteger(boolean integer) {
 		this.integer = integer;
-		if (integer) {
-			setOid(false);
-			setObjDescriptor(false);
-		}
+//		if (integer) {
+//			setOid(false);
+//			setObjDescriptor(false);
+//		}
 	}
 
 	/**
@@ -296,10 +280,10 @@ public class External {
 	 */
 	public void setObjDescriptor(boolean objDescriptor) {
 		this.objDescriptor = objDescriptor;
-		if (objDescriptor) {
-			setOid(false);
-			setInteger(false);
-		}
+//		if (objDescriptor) {
+//			setOid(false);
+//			setInteger(false);
+//		}
 	}
 
 	/**
@@ -335,7 +319,7 @@ public class External {
 	/**
 	 * @return the objDescriptorValue
 	 */
-	public Object getObjDescriptorValue() {
+	public String getObjDescriptorValue() {
 		return objDescriptorValue;
 	}
 
@@ -343,7 +327,7 @@ public class External {
 	 * @param objDescriptorValue
 	 *            the objDescriptorValue to set
 	 */
-	public void setObjDescriptorValue(Object objDescriptorValue) {
+	public void setObjDescriptorValue(String objDescriptorValue) {
 		this.objDescriptorValue = objDescriptorValue;
 	}
 

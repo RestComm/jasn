@@ -55,14 +55,28 @@ public class Tag {
 	public static final int STRING_OCTET = 0x04;
 	public static final int NULL = 0x05;
     public static final int OBJECT_IDENTIFIER = 0x06;
-    public static final int EXTERNAL = 0x8;
+	public static final int OBJECT_DESCRIPTOR = 0x07;
+    public static final int EXTERNAL = 0x08;
 	public static final int REAL = 0x09;
 	public static final int ENUMERATED = 0x0A;
+	public static final int EMBEDDED_PDV = 0x0B;
 	public static final int STRING_UTF8 = 0x0C;
+	public static final int RELATIVE_OID = 0x0D;
 	public static final int SEQUENCE = 0x10; 
+	public static final int SET = 0x11; 
+	public static final int STRING_NUMERIC = 0x12; 
+	public static final int STRING_PRINTABLE = 0x13; 
+	public static final int STRING_TELETEX = 0x14; 
+	public static final int STRING_VIDIOTEX = 0x15; 
 	public static final int STRING_IA5 = 0x16;
-	//UNKNOWN, add this ....
-	public static final int OBJECT_DESCRIPTOR = 0xFF;
+	public static final int UTCTime = 0x17; 
+	public static final int GeneralizedTime = 0x18; 
+	public static final int STRING_GRAPHIC = 0x19;
+	public static final int STRING_VISIBLE = 0x1A; 
+	public static final int STRING_GENERAL = 0x1B; 
+	public static final int STRING_UNIVERSAL = 0x1C; 
+	public static final int STRING_CHARACTER = 0x1D; 
+	public static final int STRING_BMP = 0x1E; 
 	
 	//values for ending stream of string for constructed form, see 18.2.6 in ASN.1 Communication between Heterogeneous Systems
 	public static final int NULL_TAG = 0x00;
