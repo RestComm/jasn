@@ -36,7 +36,7 @@ import java.util.BitSet;
  * @author baranowb
  * @author sergey vetyutnev
  */
-public class AsnInputStream {
+public class AsnInputStream extends InputStream {
 
 	private static final String _REAL_BASE10_CHARSET = "US-ASCII";
 	private static final int DATA_BUCKET_SIZE = 1024;
@@ -129,6 +129,7 @@ public class AsnInputStream {
 	 * 
 	 * @return
 	 */
+	@Override
 	public int available() {
 		return this.length - this.pos;
 	}
@@ -143,6 +144,25 @@ public class AsnInputStream {
 	public void advance(int byteCount) throws IOException {
 		this.position(this.pos + byteCount);
 	}
+
+	@Override
+	public long skip(long n) throws IOException {
+		if (n < 0)
+			n = 0;
+		int newPosition = this.pos + (int) n;
+		if (newPosition < 0 || newPosition > this.length)
+			newPosition = this.length;
+
+		long skipCnt = newPosition - this.pos;
+		this.pos = newPosition;
+
+		return skipCnt;
+	}
+	
+	@Override
+	public boolean markSupported() {
+		return false;
+	}
 	
 	/**
 	 * Get a byte from stream and return it.
@@ -150,6 +170,7 @@ public class AsnInputStream {
 	 * 
 	 * @return
 	 */
+	@Override
 	public int read() throws IOException {
 		if (this.available() == 0)
 			throw new EOFException("AsnInputStream has reached the end");
@@ -170,6 +191,7 @@ public class AsnInputStream {
 	 * @return Bytes count that have really read
 	 * @throws IOException
 	 */
+	@Override
 	public int read(byte[] b, int off, int len) throws IOException {
 		
 		if (len > b.length)
@@ -197,6 +219,7 @@ public class AsnInputStream {
 	 * @return Bytes count that have really read
 	 * @throws IOException
 	 */
+	@Override
 	public int read(byte[] b) throws IOException {
 
 		if (b == null )
@@ -204,7 +227,7 @@ public class AsnInputStream {
 
 		return this.read(b, 0, b.length);
 	}
-	
+
 	/**
 	 * Reads the tag field. Returns the tag value.
 	 * Tag class and primitive / constructive mark can be get then by getTagClass() and isTagPrimitive() methods

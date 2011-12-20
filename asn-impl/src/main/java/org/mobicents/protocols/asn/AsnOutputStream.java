@@ -22,9 +22,9 @@
 
 package org.mobicents.protocols.asn;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.util.BitSet;
@@ -35,7 +35,7 @@ import java.util.BitSet;
  * @author baranowb
  * @author sergey vetyutnev
  */
-public class AsnOutputStream {
+public class AsnOutputStream extends OutputStream {
 
 	// charset used to encode real data
 	private static final String _REAL_BASE10_CHARSET = "US-ASCII";
@@ -107,6 +107,7 @@ public class AsnOutputStream {
 	 * 
 	 * @param b
 	 */
+	@Override
 	public void write( int b ) {
 		this.checkIncreaseArray(1);
 		this.buffer[this.pos++] = (byte)b;
@@ -119,6 +120,7 @@ public class AsnOutputStream {
 	 * @param off
 	 * @param len
 	 */
+	@Override
 	public void write(byte[] b, int off, int len) {
 		this.checkIncreaseArray(len);
 		System.arraycopy(b, off, this.buffer, this.pos, len);
@@ -130,6 +132,7 @@ public class AsnOutputStream {
 	 * 
 	 * @param b
 	 */
+	@Override
 	public void write(byte[] b) {
 		this.write(b, 0, b.length);
 	}
