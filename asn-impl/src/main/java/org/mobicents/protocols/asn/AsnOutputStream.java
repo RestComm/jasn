@@ -565,9 +565,9 @@ public class AsnOutputStream extends OutputStream {
 		int count = 8;
 		byte data = 0;
 
-		if (set.length() - 1 < startIndex) {
-			throw new AsnException();
-		}
+//		if (set.length() - 1 < startIndex) {
+//			throw new AsnException();
+//		}
 
 		while (count > 0) {
 			if (set.length() - 1 < startIndex) {
