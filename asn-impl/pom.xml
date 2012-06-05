@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>org.mobicents.protocols.asn</groupId>
 		<artifactId>asn-parent</artifactId>
-		<version>2.0.0-SNAPSHOT</version>
+		<version>2.0.0.FINAL</version>
 	</parent>
 
 	<groupId>org.mobicents.protocols.asn</groupId>
@@ -16,7 +16,7 @@
 			<id>amit.bhayani</id>
 			<name>Amit Bhayani</name>
 			<email>amit.bhayani@gmail.com</email>
-			<organization></organization>
+			<organization />
 			<organizationUrl>http://amitbhayani.blogspot.com/</organizationUrl>
 			<roles>
 				<role>Active Developer</role>
@@ -27,8 +27,8 @@
 			<id>serg.vetyutnev</id>
 			<name>Sergey Vetyutnev</name>
 			<email>serg.vetyutnev@gmail.com</email>
-			<organization></organization>
-			<organizationUrl></organizationUrl>
+			<organization />
+			<organizationUrl />
 			<roles>
 				<role>Active Developer</role>
 			</roles>
