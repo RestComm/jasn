@@ -20,6 +20,7 @@
 		<compile.source>1.5</compile.source>
 	</properties>
 	<modules>
+		<module>docs</module>
 		<module>asn-impl</module>
 	</modules>	
 	
