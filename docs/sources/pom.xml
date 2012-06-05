@@ -6,7 +6,7 @@
 	<parent>
 		<artifactId>mobicents-asn-docs</artifactId>
 		<groupId>org.mobicents.protocols.asn.docs</groupId>
-		<version>2.0.0.FINAL</version>
+		<version>2.0.0-SNAPSHOT</version>
 	</parent>
 
 	<artifactId>mobicents-asn-docs-sources</artifactId>
