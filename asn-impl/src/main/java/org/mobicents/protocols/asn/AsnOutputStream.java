@@ -201,11 +201,38 @@ public class AsnOutputStream extends OutputStream {
 			this.write(0x80);
 			return;
 		} else if (v > 0x7F) {
+            int count;
+            byte[] buf = new byte[4];
+            if ((v & 0xFF000000) > 0) {
+                buf[0] = (byte)((v >> 24) & 0xFF);
+                buf[1] = (byte)((v >> 16) & 0xFF);
+                buf[2] = (byte)((v >> 8) & 0xFF);
+                buf[3] = (byte)(v & 0xFF);
+                count = 4;
+            } else if ((v & 0x00FF0000) > 0) {
+                buf[0] = (byte)((v >> 16) & 0xFF);
+                buf[1] = (byte)((v >> 8) & 0xFF);
+                buf[2] = (byte)(v & 0xFF);
+                count = 3;
+            } else if ((v & 0x0000FF00) > 0) {
+                buf[0] = (byte)((v >> 8) & 0xFF);
+                buf[1] = (byte)(v & 0xFF);
+                count = 2;
+            } else {
+                buf[0] = (byte)(v & 0xFF);
+                count = 1;
+            }
 
-			int posLen = this.pos;
-			this.write(0);
-			int count = this.writeIntegerData(v);
-			this.buffer[posLen] = (byte) (count | 0x80);
+            this.buffer[pos] = (byte) (0x80 | count);
+            for (int i1 = 0; i1 < count; i1++) {
+                this.buffer[pos + i1 + 1] = buf[i1];
+            }
+            this.pos += count + 1;
+
+//			int posLen = this.pos;
+//			this.write(0);
+//			int count = this.writeIntegerData(v);
+//			this.buffer[posLen] = (byte) (count | 0x80);
 		} else { // short
 			
 			this.write(v);

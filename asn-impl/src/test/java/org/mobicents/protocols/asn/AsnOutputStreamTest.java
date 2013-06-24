@@ -62,7 +62,7 @@ public class AsnOutputStreamTest extends TestCase {
 		
 		// primitive, contentLength field length = 1 byte 
 		byte[] expected = new byte[] { (byte)0x81, 3, 1, 2, 3 };
-		this.output.reset();
+		this.output = new AsnOutputStream();
 		this.output.writeTag(Tag.CLASS_CONTEXT_SPECIFIC, true, 1);
 		int i1 = this.output.StartContentDefiniteLength();
 		this.output.write(1);
@@ -71,9 +71,33 @@ public class AsnOutputStreamTest extends TestCase {
 		this.output.FinalizeContent(i1);
 		byte[] encodedData = this.output.toByteArray();
 		compareArrays(expected, encodedData);
-		
+
+        byte[] content = new byte[128];
+        Arrays.fill(content, (byte)22);
+        content[0] = 33;
+        content[127] = 33;
+        expected = new byte[3 + 128];
+        expected[0] = (byte)0xA1;
+        expected[1] = (byte)0x81;
+        expected[2] = (byte)128;
+        System.arraycopy(content, 0, expected, 3, 128);
+        this.output = new AsnOutputStream();
+        this.output.writeTag(Tag.CLASS_CONTEXT_SPECIFIC, false, 1);
+        i1 = this.output.StartContentDefiniteLength();
+        this.output.write(content);
+        this.output.FinalizeContent(i1);
+        encodedData = this.output.toByteArray();
+        compareArrays(expected, encodedData);
+
+        this.output = new AsnOutputStream();
+        this.output.writeTag(Tag.CLASS_CONTEXT_SPECIFIC, false, 1);
+        this.output.writeLength(content.length);
+        this.output.write(content);
+        encodedData = this.output.toByteArray();
+        compareArrays(expected, encodedData);
+
 		// constructed, contentLength field length = 3 byte
-		byte[] content = new byte[400];
+		content = new byte[400];
 		Arrays.fill(content, (byte)22);
 		content[0] = 33;
 		content[399] = 33;
