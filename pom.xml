@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>org.mobicents</groupId>
 		<artifactId>mobicents-parent</artifactId>
-		<version>2.22</version>
+		<version>2.26</version>
 	</parent>
 
 	<groupId>org.mobicents.protocols.asn</groupId>
@@ -186,9 +186,9 @@
 	</build>
 
 	<scm>
-		<connection>scm:git:https://code.google.com/p/jasn/</connection>
-		<developerConnection>scm:git:https://code.google.com/p/jasn/</developerConnection>
-		<url>https://code.google.com/p/jasn/</url>
+		<connection>scm:git:https://github.com/mobicents/jasn/</connection>
+		<developerConnection>scm:git:https://github.com/mobicents/jasn/</developerConnection>
+		<url>https://github.com/mobicents/jasn/</url>
 	</scm>
 	<!-- repositories -->
 	<repositories>
