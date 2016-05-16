@@ -2,15 +2,15 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
 	<parent>
-		<artifactId>mobicents-asn-docs</artifactId>
+		<artifactId>restcomm-asn-docs</artifactId>
 		<groupId>org.mobicents.protocols.asn.docs</groupId>
-		<version>2.0.4-SNAPSHOT</version>
+		<version>2.1.0-SNAPSHOT</version>
 	</parent>
 
-	<artifactId>mobicents-asn-docs-jdocbook-mobicents</artifactId>
+	<artifactId>restcomm-asn-docs-jdocbook-restcomm</artifactId>
 
 	<modelVersion>4.0.0</modelVersion>
-	<name>Mobicents :: ASN :: Docs :: Build :: ${project.artifactId}</name>
+	<name>Restcomm :: ASN :: Docs :: Build :: ${project.artifactId}</name>
 	<packaging>jdocbook</packaging>
 
 
@@ -61,7 +61,7 @@
 							<artifactItems>
 								<artifactItem>
 									<groupId>${project.groupId}</groupId>
-									<artifactId>mobicents-asn-docs-sources-mobicents</artifactId>
+									<artifactId>restcomm-asn-docs-sources-restcomm</artifactId>
 									<version>${project.version}</version>
 									<type>jar</type>
 									<overWrite>true</overWrite>
@@ -103,7 +103,7 @@
 						<format>
 							<formatName>pdf</formatName>
 							<stylesheetResource>classpath:/xslt/org/jboss/pdf.xsl</stylesheetResource>
-							<finalName>Mobicents_${docs.bookid}_User_Guide.pdf</finalName>
+							<finalName>RestComm_${docs.bookid}_User_Guide.pdf</finalName>
 						</format>
 						<format>
 							<formatName>html</formatName>

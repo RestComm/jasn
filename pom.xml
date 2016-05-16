@@ -3,14 +3,14 @@
 
 	<parent>
 		<groupId>org.mobicents</groupId>
-		<artifactId>mobicents-parent</artifactId>
-		<version>2.26</version>
+		<artifactId>restcomm-parent</artifactId>
+		<version>2.27.32</version>
 	</parent>
 
 	<groupId>org.mobicents.protocols.asn</groupId>
 	<artifactId>asn-parent</artifactId>
-	<version>2.0.4-SNAPSHOT</version>
-	<name>Mobicents :: ASN :: Parent :: ${project.artifactId}</name>
+	<version>2.1.0-SNAPSHOT</version>
+	<name>Restcomm :: ASN :: Parent :: ${project.artifactId}</name>
 	<packaging>pom</packaging>
 
 
@@ -153,7 +153,7 @@
 				<artifactId>maven-eclipse-plugin</artifactId>
 				<groupId>org.mobicents.tools</groupId>
 				<version>
-					${mobicents.tools.mavenplugin.eclipse.version}
+					${restcomm.tools.mavenplugin.eclipse.version}
 				</version>
 				<inherited>false</inherited>
 				<executions />
@@ -186,15 +186,15 @@
 	</build>
 
 	<scm>
-		<connection>scm:git:https://github.com/mobicents/jasn/</connection>
-		<developerConnection>scm:git:https://github.com/mobicents/jasn/</developerConnection>
-		<url>https://github.com/mobicents/jasn/</url>
+		<connection>scm:git:https://github.com/RestComm/jasn/</connection>
+		<developerConnection>scm:git:https://github.com/RestComm/jasn/</developerConnection>
+		<url>https://github.com/RestComm/jasn/</url>
 	</scm>
 	<!-- repositories -->
 	<repositories>
 		<repository>
-			<id>mobicents-public-repository-group</id>
-			<name>Mobicens Public Maven Repository Group</name>
+			<id>restcomm-public-repository-group</id>
+			<name>Restcomm Public Maven Repository Group</name>
 			<url>https://oss.sonatype.org/content/groups/public/</url>
 			<layout>default</layout>
 			<releases>

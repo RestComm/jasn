@@ -2,14 +2,14 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	
 	<modelVersion>4.0.0</modelVersion>
-	
+
 	<parent>
-		<artifactId>mobicents-asn-docs</artifactId>
+		<artifactId>restcomm-asn-docs</artifactId>
 		<groupId>org.mobicents.protocols.asn.docs</groupId>
-		<version>2.0.4-SNAPSHOT</version>
+		<version>2.1.0-SNAPSHOT</version>
 	</parent>
 
-	<artifactId>mobicents-asn-docs-sources-asciidoc</artifactId>
+	<artifactId>restcomm-asn-docs-sources-asciidoc</artifactId>
 
 	<properties>
 		<asciidoctor.maven.plugin.version>1.5.3</asciidoctor.maven.plugin.version>
