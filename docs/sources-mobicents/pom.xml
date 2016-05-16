@@ -10,7 +10,7 @@
 	</parent>
 
 	<artifactId>mobicents-asn-docs-sources-mobicents</artifactId>
-	<name>Mobicents :: ASN :: Docs :: Sources :: ${pom.artifactId}</name>
+	<name>Mobicents :: ASN :: Docs :: Sources :: ${project.artifactId}</name>
 	<properties>
 		<THIS.PLATFORM>Mobicents</THIS.PLATFORM>
 		<JEE.PLATFORM>JBoss Application Server</JEE.PLATFORM>
@@ -43,9 +43,9 @@
 						<configuration>
 							<artifactItems>
 								<artifactItem>
-									<groupId>${pom.groupId}</groupId>
+									<groupId>${project.groupId}</groupId>
 									<artifactId>mobicents-asn-docs-sources</artifactId>
-									<version>${pom.version}</version>
+									<version>${project.version}</version>
 									<type>jar</type>
 									<overWrite>true</overWrite>
 									<outputDirectory>${basedir}/src/main/resources</outputDirectory>

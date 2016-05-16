@@ -10,7 +10,7 @@
 	<artifactId>mobicents-asn-docs-jdocbook-mobicents</artifactId>
 
 	<modelVersion>4.0.0</modelVersion>
-	<name>Mobicents :: ASN :: Docs :: Build :: ${pom.artifactId}</name>
+	<name>Mobicents :: ASN :: Docs :: Build :: ${project.artifactId}</name>
 	<packaging>jdocbook</packaging>
 
 
@@ -60,9 +60,9 @@
 						<configuration>
 							<artifactItems>
 								<artifactItem>
-									<groupId>${pom.groupId}</groupId>
+									<groupId>${project.groupId}</groupId>
 									<artifactId>mobicents-asn-docs-sources-mobicents</artifactId>
-									<version>${pom.version}</version>
+									<version>${project.version}</version>
 									<type>jar</type>
 									<overWrite>true</overWrite>
 									<outputDirectory>${project.build.directory}/docbook/resources</outputDirectory>

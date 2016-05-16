@@ -10,7 +10,7 @@
 	</parent>
 	
 	<artifactId>asn-release</artifactId>
-	<name>Mobicents :: Release :: ${pom.artifactId}</name>
+	<name>Mobicents :: Release :: ${project.artifactId}</name>
 	<profiles>
 		<profile>
 			<id>release</id>

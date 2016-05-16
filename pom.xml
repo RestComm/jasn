@@ -10,7 +10,7 @@
 	<groupId>org.mobicents.protocols.asn</groupId>
 	<artifactId>asn-parent</artifactId>
 	<version>2.0.4-SNAPSHOT</version>
-	<name>Mobicents :: ASN :: Parent :: ${pom.artifactId}</name>
+	<name>Mobicents :: ASN :: Parent :: ${project.artifactId}</name>
 	<packaging>pom</packaging>
 
 
